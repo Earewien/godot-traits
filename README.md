@@ -72,7 +72,7 @@ class_name Game
 extends Node2D
 
 func _process_() -> void:
-    var crate = get_node("crate)
+    var crate = get_node("crate")
     # Move the crate only if it is moveable
     # This code does not throw assertion error since we check that the crate is moveable
     if GTraits.is_a(Moveable, crate):
