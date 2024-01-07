@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bh8i7v1wen04a"]
+
+[ext_resource type="Script" path="res://addons/godot-traits/examples/core/use-trait-auto-injection/main.gd" id="1_fgeky"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_fgeky")
