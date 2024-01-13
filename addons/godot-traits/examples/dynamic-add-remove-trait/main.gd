@@ -20,19 +20,23 @@ extends Node2D
 # Private variables
 #------------------------------------------
 
+var _ellapsed_time:float
+var _npc
+
 #------------------------------------------
 # Godot override functions
 #------------------------------------------
 
 func _ready() -> void:
-    var npc = preload("res://addons/godot-traits/examples/core/trait-runtime-checks/npc.gd").new()
-    # Will print true !
-    print("Is a Killable : %s" % GTraits.is_a_killable(npc))
-    # Will print false !
-    print("Is a Healthable : %s" % GTraits.is_a_healthable(npc))
-    # Will raise an assertion error, since getting a non existing trait is forbidden !
-    # with message 'Instance of trait 'Healthable' not found'
-    GTraits.as_healthable(npc)
+    _npc = preload("res://addons/godot-traits/examples/dynamic-add-remove-trait/npc.gd").new()
+
+func _process(delta: float) -> void:
+    _ellapsed_time += delta
+
+    if _ellapsed_time > 1:
+        _ellapsed_time = 0
+        if GTraits.is_a_damageable(_npc):
+            GTraits.as_damageable(_npc).take_damage(1)
 
 #------------------------------------------
 # Public functions
@@ -41,3 +45,14 @@ func _ready() -> void:
 #------------------------------------------
 # Private functions
 #------------------------------------------
+
+func _on_incibility_timer_timeout() -> void:
+    # NPC has trait CriticalDamageable, but we cn remote it using it's super class Damageable
+    if GTraits.is_a_damageable(_npc):
+        print("Removing damageable trait !")
+        GTraits.unset_damageable(_npc)
+    else:
+        print("Adding damageable trait !")
+        # Is not critical anymore !
+        GTraits.set_damageable(_npc)
+

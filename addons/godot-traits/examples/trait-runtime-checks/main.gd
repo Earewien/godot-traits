@@ -20,22 +20,19 @@ extends Node2D
 # Private variables
 #------------------------------------------
 
-var _ellapsed_time:float = 0
-var _npc:Node2D
-
 #------------------------------------------
 # Godot override functions
 #------------------------------------------
 
 func _ready() -> void:
-    _npc = preload("res://addons/godot-traits/examples/core/use-trait-auto-injection/npc.gd").new()
-    add_child(_npc)
-
-func _process(delta: float) -> void:
-    _ellapsed_time += delta
-    if _ellapsed_time > 0.5:
-        _ellapsed_time = 0
-        GTraits.as_damageable(_npc).take_damage(10)
+    var npc = preload("res://addons/godot-traits/examples/trait-runtime-checks/npc.gd").new()
+    # Will print true !
+    print("Is a Killable : %s" % GTraits.is_a_killable(npc))
+    # Will print false !
+    print("Is a Healthable : %s" % GTraits.is_a_healthable(npc))
+    # Will raise an assertion error, since getting a non existing trait is forbidden !
+    # with message 'Instance of trait 'Healthable' not found'
+    GTraits.as_healthable(npc)
 
 #------------------------------------------
 # Public functions
@@ -44,4 +41,3 @@ func _process(delta: float) -> void:
 #------------------------------------------
 # Private functions
 #------------------------------------------
-

@@ -16,25 +16,18 @@ extends Node2D
 # Public variables
 #------------------------------------------
 
+var _npc:Node2D
+
 #------------------------------------------
 # Private variables
 #------------------------------------------
 
-var _ellapsed_time:float = 0
-var _npc:Node2D
-
-#------------------------------------------
-# Godot override functions
-#------------------------------------------
-
 func _ready() -> void:
-    _npc = preload("res://addons/godot-traits/examples/core/declare-and-use-traits/npc.gd").new()
-    add_child(_npc)
-
-func _process(delta: float) -> void:
-    _ellapsed_time += delta
-    if _ellapsed_time > 2:
-        GTraits.as_killable(_npc).kill()
+    _npc = preload("res://addons/godot-traits/examples/trait-inheritance/npc.gd").new()
+    # Takes 20 damages, as it called the critical damage trait !
+    GTraits.as_critical_damageable(_npc).take_damage(10)
+    # Also take 20 damages, as it also called the critical damage trait
+    GTraits.as_damageable(_npc).take_damage(10)
 
 #------------------------------------------
 # Public functions
