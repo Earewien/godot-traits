@@ -34,7 +34,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
     _ellapsed_time += delta
     if _ellapsed_time > 2:
-        GTraitsCore.as_a(GTraitsCoreExampleKillable, _npc).kill()
+        GTraits.as_killable(_npc).kill()
 
 #------------------------------------------
 # Public functions

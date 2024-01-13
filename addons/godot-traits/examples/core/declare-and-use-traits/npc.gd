@@ -25,7 +25,7 @@ extends Node2D
 #------------------------------------------
 
 func _init() -> void:
-    GTraitsCore.add_trait_to(GTraitsCoreExampleKillable, self)
+    GTraits.set_killable(self)
 
 #------------------------------------------
 # Public functions
