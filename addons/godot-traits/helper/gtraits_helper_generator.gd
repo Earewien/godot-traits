@@ -294,7 +294,7 @@ func _generate_gtraits_helper() -> void:
                 content += "\n"
                 content += "## Gets if the given object is a [%s].\n" % trait_full_name
                 content += "## See [method GTraits.is_a] for more details.\n"
-                content += "static func is_a_%s(object:Object) -> bool:\n" % snaked_trait_full_name
+                content += "static func is_%s(object:Object) -> bool:\n" % snaked_trait_full_name
                 content += indent_string + "return is_a(%s, object)\n" % trait_full_name
                 content += "\n"
                 content += "## Add trait [%s] to the given object.\n" % trait_full_name
@@ -317,7 +317,7 @@ func _generate_gtraits_helper() -> void:
                 content += "\n"
                 content += "## Gets if the given object is a [%s] as trait alias [b][%s][/b].\n" % [trait_full_name, trait_name_alias]
                 content += "## See [method GTraits.is_a] for more details.\n"
-                content += "static func is_a_%s(object:Object) -> bool:\n" %snaked_trait_name_alias
+                content += "static func is_%s(object:Object) -> bool:\n" %snaked_trait_name_alias
                 content += indent_string + "return is_a(%s, object)\n" % trait_full_name
                 content += "\n"
                 content += "## Add trait [%s] as trait alias [b]%s[/b] to the given object.\n" % [trait_full_name, trait_name_alias]
