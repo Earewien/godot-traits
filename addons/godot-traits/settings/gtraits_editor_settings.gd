@@ -13,20 +13,29 @@ class_name GTraitsEditorSettings
 
 # Prefix for editor settings keys
 const _EDITOR_SETTINGS_KEY_PREFIX:String = "plugin/gtraits/"
-# Editor settings key for invoker output path
-const _EDITOR_SETTINGS_INVOKER_OUTPUT_PATH:String = "%s/gtraits_helper_path" % _EDITOR_SETTINGS_KEY_PREFIX
+# Editor settings key for helper output path
+const _EDITOR_SETTINGS_HELPER_OUTPUT_PATH:String = "%s/gtraits_helper_path" % _EDITOR_SETTINGS_KEY_PREFIX
+# Editor settings key for helper regeneration shortcut
+const _EDITOR_SETTINGS_HELPER_SHORTCUT:String = "%s/gtraits_helper_shorcut" % _EDITOR_SETTINGS_KEY_PREFIX
 # Editor settings for script indent type (tabs or spaces)
 const _EDITOR_SETTINGS_INDENT_TYPE:String = "text_editor/behavior/indent/type"
 # Editor settings for indent size when type is space
 const _EDITOR_SETTINGS_INDENT_SIZE:String = "text_editor/behavior/indent/size"
 
 
-# Editor setting infos for the invoker output path
-const _SETTINGS_INVOKER_OUTPUT_PATH_INFOS:Dictionary = {
-    "name": _EDITOR_SETTINGS_INVOKER_OUTPUT_PATH,
+# Editor setting infos for the helper output path
+const _SETTINGS_HELPER_OUTPUT_PATH_INFOS:Dictionary = {
+    "name": _EDITOR_SETTINGS_HELPER_OUTPUT_PATH,
     "type": TYPE_STRING,
     "hint": PROPERTY_HINT_DIR,
     "default_value": "res://gtraits/helper"
+}
+
+# Editor setting infos for the helper shortcut
+# as a var and not a const due to Shortcut method call...
+var _SETTINGS_HELPER_SHORTCUT_INFOS:Dictionary = {
+    "name": _EDITOR_SETTINGS_HELPER_SHORTCUT,
+    "default_value": _get_helper_regeneration_default_shortcut()
 }
 
 #------------------------------------------
@@ -94,12 +103,11 @@ func uninitialize() -> void:
 
 ## Returns the absolute path to the trait invoker output folder
 func get_gtraits_helper_output_path() -> String:
-    var output_path:String = _get_setting_value(_SETTINGS_INVOKER_OUTPUT_PATH_INFOS)
-    if not DirAccess.dir_exists_absolute(output_path):
-        var error = DirAccess.make_dir_recursive_absolute(output_path)
-        if error != OK:
-            printerr("Unable to create dir %s: error code %s" % [output_path, error])
-    return output_path
+    var output_path:String = _get_setting_value(_SETTINGS_HELPER_OUTPUT_PATH_INFOS)
+    return "%s/gtraits.gd" % output_path
+
+func get_gtraits_helper_regeneration_shortcut() -> Shortcut:
+    return _get_setting_value(_SETTINGS_HELPER_SHORTCUT_INFOS)
 
 ## Returns the type of indentation used by the editor. See [enum GTraitsEditorSettings.IndentType]
 func get_editor_indent_type() -> IndentType:
@@ -115,7 +123,7 @@ func get_editor_indent_size() -> int:
 
 func _on_editor_settings_changed() -> void:
     for setting_path in _editor_settings.get_changed_settings():
-        if setting_path == _EDITOR_SETTINGS_INVOKER_OUTPUT_PATH:
+        if setting_path == _EDITOR_SETTINGS_HELPER_OUTPUT_PATH:
             on_trait_invoker_path_changed.emit()
         elif setting_path == _EDITOR_SETTINGS_INDENT_TYPE:
             on_editor_indent_type_changed.emit()
@@ -123,7 +131,8 @@ func _on_editor_settings_changed() -> void:
             on_editor_indent_size_changed.emit()
 
 func _ensure_default_settings() -> void:
-    _create_setting_if_needed(_SETTINGS_INVOKER_OUTPUT_PATH_INFOS)
+    _create_setting_if_needed(_SETTINGS_HELPER_OUTPUT_PATH_INFOS)
+    _create_setting_if_needed(_SETTINGS_HELPER_SHORTCUT_INFOS)
 
 func _create_setting_if_needed(infos:Dictionary) -> void:
     var settings_key:String = infos['name']
@@ -131,7 +140,18 @@ func _create_setting_if_needed(infos:Dictionary) -> void:
     if not _editor_settings.has_setting(settings_key):
         _editor_settings.set_setting(settings_key, infos['default_value'])
         _editor_settings.set_initial_value(settings_key, infos['default_value'], true)
-        _editor_settings.add_property_info(_SETTINGS_INVOKER_OUTPUT_PATH_INFOS)
+        if infos.has("type"):
+            _editor_settings.add_property_info(infos)
 
 func _get_setting_value(settings_info:Dictionary) -> Variant:
     return _editor_settings.get_setting(settings_info['name'])
+
+func _get_helper_regeneration_default_shortcut() -> Shortcut:
+    var shortcut: Shortcut = Shortcut.new()
+    var event: InputEventKey = InputEventKey.new()
+    event.device = -1
+    event.ctrl_pressed = true
+    event.alt_pressed = true
+    event.keycode = KEY_U
+    shortcut.events = [event]
+    return shortcut

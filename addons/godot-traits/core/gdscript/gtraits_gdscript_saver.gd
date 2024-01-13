@@ -75,6 +75,7 @@ func _get_or_create_script(script_path:String) -> Script:
     return script
 
 func _do_save_script(script:Script) -> void:
+    DirAccess.make_dir_recursive_absolute(script.resource_path.get_base_dir())
     var error = ResourceSaver.save(script, script.resource_path, ResourceSaver.FLAG_CHANGE_PATH)
     if error != OK:
             printerr("⚠️ Unable to save script content into '%s': %s" % [script.resource_path, error_string(error)])

@@ -63,7 +63,7 @@ static func get_instance() -> GTraitsHelperGenerator:
 
 func initialize() -> void:
     var editor_settings:GTraitsEditorSettings = GTraitsEditorSettings.get_instance()
-    _gtraits_script_path = "%s/gtraits.gd" % editor_settings.get_gtraits_helper_output_path()
+    _gtraits_script_path = editor_settings.get_gtraits_helper_output_path()
     if not editor_settings.on_trait_invoker_path_changed.is_connected(_on_trait_invoker_path_changed):
         editor_settings.on_trait_invoker_path_changed.connect(_on_trait_invoker_path_changed)
     if not editor_settings.on_editor_indent_type_changed.is_connected(_on_editor_indent_type_changed):
@@ -103,13 +103,17 @@ func uninitialize() -> void:
 
     _instance = null
 
+## Force [GTraits] script regeneration by rescanning all script in [code]res://[/code] folder.
+func clear_and_regenerate() -> void:
+    _reload_scripts_traits_from_filesystem()
+
 #------------------------------------------
 # Private functions
 #------------------------------------------
 
 func _on_trait_invoker_path_changed() -> void:
     var old_gtraits_path:String = _gtraits_script_path
-    _gtraits_script_path = "%s/gtraits.gd" % GTraitsEditorSettings.get_instance().get_gtraits_helper_output_path()
+    _gtraits_script_path = GTraitsEditorSettings.get_instance().get_gtraits_helper_output_path()
 
     if FileAccess.file_exists(old_gtraits_path):
         # Quite complicated to avoid editor to be lost...

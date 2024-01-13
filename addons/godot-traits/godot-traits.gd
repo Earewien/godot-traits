@@ -25,3 +25,10 @@ func _exit_tree() -> void:
         GTraitsEditorSettings.get_instance().uninitialize()
         _instance = null
         print("🎭 Godot Traits unloaded !")
+
+func _unhandled_key_input(event: InputEvent) -> void:
+    if Engine.is_editor_hint():
+        if GTraitsEditorSettings.get_instance().get_gtraits_helper_regeneration_shortcut().matches_event(event):
+            if event.is_released():
+                GTraitsHelperGenerator.get_instance().clear_and_regenerate()
+                print("🎭 Godot Traits: GTraits script regenerated in '%s'" % GTraitsEditorSettings.get_instance().get_gtraits_helper_output_path())
