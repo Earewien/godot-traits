@@ -12,7 +12,6 @@ config_version=5
 
 config/name="Godot-Traits"
 config/features=PackedStringArray("4.2", "GL Compatibility")
-config/icon="res://icon.png"
 
 [editor_plugins]
 

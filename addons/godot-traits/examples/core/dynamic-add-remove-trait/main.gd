@@ -35,8 +35,8 @@ func _process(delta: float) -> void:
     
     if _ellapsed_time > 1:
         _ellapsed_time = 0
-        if GTraits.is_a(GTraitsCoreExampleDamageable, _npc):
-            GTraits.as_a(GTraitsCoreExampleDamageable, _npc).take_damage(1)
+        if GTraitsCore.is_a(GTraitsCoreExampleDamageable, _npc):
+            GTraitsCore.as_a(GTraitsCoreExampleDamageable, _npc).take_damage(1)
 
 #------------------------------------------
 # Public functions
@@ -48,11 +48,11 @@ func _process(delta: float) -> void:
 
 func _on_incibility_timer_timeout() -> void:
     # NPC has trait GTraitsCoreExampleCriticalDamageable, but we cn remote it using it's super class GTraitsCoreExampleDamageable
-    if GTraits.is_a(GTraitsCoreExampleDamageable, _npc):
+    if GTraitsCore.is_a(GTraitsCoreExampleDamageable, _npc):
         print("Removing damageable trait !")
-        GTraits.remove_trait_from(GTraitsCoreExampleDamageable, _npc)
+        GTraitsCore.remove_trait_from(GTraitsCoreExampleDamageable, _npc)
     else:
         print("Adding damageable trait !")
         # Is not critical anymore !
-        GTraits.add_trait_to(GTraitsCoreExampleDamageable, _npc)
+        GTraitsCore.add_trait_to(GTraitsCoreExampleDamageable, _npc)
 

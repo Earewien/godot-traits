@@ -25,7 +25,7 @@ Many usage examples are available in `addons/godot-traits/examples` folders. Eac
 
 ## 📄 Features
 
-### Dynamic trait addition and removal
+### ➡️ Dynamic trait addition and removal
 
 _Godot Traits_ allows to dynamically add or remove traits to any object at runtime. This allows to conditionnaly active some bahavior without having to maintain a state that must be accessible from anywhere. 
 
@@ -47,14 +47,14 @@ class_name Game
 extends Node2D
 
 func _process_() -> void:
-    var crate = get_node("crate)
+    var crate = get_node("crate")
     # Is always safe since we check if the trait is still available on the crate. No 
     # needs maintain an internal crate state saying it's invisible or not
     if GTraits.is_a(Damageable, crate):
         GTraits.as_a(Damageable, crate).take_damage(1)
 ```
 
-### Strong runtime checks
+### ➡️ Strong runtime checks
 
 We, as developers, often make strong assumptions on what we have as objects, for exemple, what kind of node we receive in a callback (_it's always a car !_ for example). But, how to be sure we receive what we intented to receive ? Most of callback methods just return `Node` type objects. Duck typing has some limitations when it comes to debugging your application (_if my object has the __kill__ method then call it, but what happens if it does not have the __kill__ method? No error !_).
 
@@ -82,7 +82,7 @@ func _process_() -> void:
     GTraits.as_a(Moveable, crate).move(Vector2.RIGHT)
 ```
 
-### Automatic trait dependencies injection
+### ➡️ Automatic trait dependencies injection
 
 Traits may depends on each other to work, or may need a _receiver_ object (the trait carrier) to implement behavior. For example, a _Damageable_ trait surely needs a _Healthable_ object to remove health from when damage are taken. 
 
@@ -156,7 +156,7 @@ func _init() -> void:
 
 ⚠️ For now, only constructor with zero or one argument are handled by _Godot Traits_. 
 
-### Trait classes hierarchy
+### ➡️ Trait classes hierarchy
 
 It's common to want to specialize some behavior using a sub-class. For example, specializing some code to handle critical damages: it's very like taking damage, but the amount of damage is not the same.
 

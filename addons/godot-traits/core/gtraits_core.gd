@@ -1,10 +1,10 @@
-class_name GTraits
+class_name GTraitsCore
 
-## 
+##
 ## Traits made easy in Godot.
 ##
-## Traits are set of variables, functions and behaviors that can be use to extend 
-## the functionnalities of a class. This concept does not exist (yet!) in Godot, 
+## Traits are set of variables, functions and behaviors that can be use to extend
+## the functionnalities of a class. This concept does not exist (yet!) in Godot,
 ## but it can be emulated in order to ease game developement.
 ##
 ## [br][br]
@@ -19,21 +19,21 @@ class_name GTraits
 ## # In object class
 ## func _init() -> void:
 ##     # Add Damageable trait to this object
-##     GTraits.add_trait_to(Damageable, self)
-## 
+##     GTraitsCore.add_trait_to(Damageable, self)
+##
 ## # Elsewhere
 ## func _on_body_entered(body:Node2D) -> void:
-##     # Automatically checks that body has a Damageable trait, break code if 
+##     # Automatically checks that body has a Damageable trait, break code if
 ##     # body has no Damageable trait, useful to debug and assert things.
-##     GTraits.as_a(Damageable, body).take_damage(10)
-## 
+##     GTraitsCore.as_a(Damageable, body).take_damage(10)
+##
 ## [/codeblock]
 ##
 ## [br][br]
 ## Strong typing and code completion can not be achieved through this unique class,
-## since [method GTraits.as_a] returned type is [Object]. To achieve strong type and
+## since [method GTraitsCore.as_a] returned type is [Object]. To achieve strong type and
 ## code completion, use the automatic trait invoker generated code.
-## 
+##
 ## [br][br]
 ## [color=red]Changes can occurs in API since it's in development phase.[/color]
 ## @experimental
@@ -75,14 +75,14 @@ static func is_a(a_trait:Script, object:Object) -> bool:
         return false
     return is_instance_valid(_traits_storage.get_trait_instance(object, a_trait))
 
-## Add a trait to the given object and returns the instantiated trait. If trait already exists in 
+## Add a trait to the given object and returns the instantiated trait. If trait already exists in
 ## the object, it is immediatly returned.
 static func add_trait_to(a_trait:Script, object:Object) -> Object:
     assert(is_instance_valid(a_trait), "Trait must be a valid script (noll null or freed)")
     assert(is_instance_valid(object), "Object must be a valid object (noll null or freed)")
-    
-    # 2 possibilities: 
-    # - trait already exists in this object (multiple call to add_trait_to): retrieve 
+
+    # 2 possibilities:
+    # - trait already exists in this object (multiple call to add_trait_to): retrieve
     # already instantiated trait
     # - trait does not exist: instantiate it, add it to the object
     var trait_instance:Object
@@ -113,14 +113,14 @@ static func as_a(a_trait:Script, object:Object) -> Object:
 
 static func _instantiate_trait_for_object(a_trait:Script, object:Object) -> Object:
     assert(a_trait.can_instantiate(), "Trait '%s' can not be instantiated" % _traits_storage.get_trait_class_name(a_trait))
-    
-    # Trait constructor ('_init' method) can take 0 or 1 parameter. 
+
+    # Trait constructor ('_init' method) can take 0 or 1 parameter.
     # If it takes one parameter, it can either be:
     # - the object itself, since trait may need contextual usage to work
     # - a trait of the object itself
     var constructor_parameter:Object = null
     var constructor_has_argument:bool = false
-    
+
     # Look for _init method to check if it takes parameters or not
     for method in a_trait.get_script_method_list():
         if method.name == "_init":
@@ -148,19 +148,19 @@ static func _instantiate_trait_for_object(a_trait:Script, object:Object) -> Obje
                         constructor_parameter = _traits_storage.get_trait_instance(object, needed_trait, true)
             else:
                 assert(false, "Trait constructor can not be called")
-            
+
             # Ugly but efficient: there is only one _init method in a script !
             break
-    
+
     # Instantiate trait and save it into the object trait instances storage
     var trait_instance:Object = a_trait.new(constructor_parameter) if constructor_has_argument else a_trait.new()
     _traits_storage.store_trait_instance(object, trait_instance)
-    
+
     # If trait has parent classes, to prevent to create new trait instance if parent classes are asked for this
     # object, register this trait instance has the one to be returned when a parent class is asked (POO style)
     var parent_script:Script = a_trait.get_base_script()
     while(parent_script != null):
         _traits_storage.store_trait_instance(object, trait_instance, parent_script)
         parent_script = parent_script.get_base_script()
-    
+
     return trait_instance

@@ -1,7 +1,7 @@
 extends RefCounted
 class_name GTraitsTypeOracle
 
-## 
+##
 ## Type Oracle [GTraits].
 ##
 ## [color=red]This is an internal API.[/color]
@@ -75,20 +75,20 @@ func is_object_instance_of(a_class_name:String, object:Object) -> bool:
 
         return false
 
-## Returns an [Array] of [Script] containing only super clsses and sub-classes of the given type. 
+## Returns an [Array] of [Script] containing only super clsses and sub-classes of the given type.
 ## Type itself [b]is[/b] included in the result.
 func filter_super_script_types_and_sub_script_types_of(scripts:Array[Script], script:Script) -> Array[Script]:
     var filtered_scripts:Array[Script] = [] as Array[Script]
     var script_super_types:Array[Script] = _get_super_script_types_of(script)
-    
+
     for a_script in scripts:
         if script_super_types.has(a_script) or _get_super_script_types_of(a_script).has(script):
             filtered_scripts.append(a_script)
-    
+
     filtered_scripts.append(script)
-    
+
     return filtered_scripts
-        
+
 #------------------------------------------
 # Private functions
 #------------------------------------------

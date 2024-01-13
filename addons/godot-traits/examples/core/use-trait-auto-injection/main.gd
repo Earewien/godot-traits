@@ -35,7 +35,7 @@ func _process(delta: float) -> void:
     _ellapsed_time += delta
     if _ellapsed_time > 0.5:
         _ellapsed_time = 0
-        GTraits.as_a(GTraitsCoreExampleDamageable, _npc).take_damage(10)
+        GTraitsCore.as_a(GTraitsCoreExampleDamageable, _npc).take_damage(10)
 
 #------------------------------------------
 # Public functions
