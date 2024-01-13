@@ -72,10 +72,13 @@ func initialize() -> void:
         editor_settings.on_editor_indent_size_changed.connect(_on_editor_indent_size_changed)
 
     var editor_plugin:GodotTraitsEditorPlugin = GodotTraitsEditorPlugin.get_instance()
+    var fs_dock:FileSystemDock = EditorInterface.get_file_system_dock()
     if not editor_plugin.resource_saved.is_connected(_on_resource_saved):
         editor_plugin.resource_saved.connect(_on_resource_saved)
-    if not EditorInterface.get_file_system_dock().resource_removed.is_connected(_on_resource_removed):
-        EditorInterface.get_file_system_dock().resource_removed.connect(_on_resource_removed)
+    if not fs_dock.resource_removed.is_connected(_on_resource_removed):
+        fs_dock.resource_removed.connect(_on_resource_removed)
+    if not fs_dock.files_moved.is_connected(_on_files_moved):
+        fs_dock.files_moved.connect(_on_files_moved)
 
     # Regenerate GTraits script from scratch, by scanning all file on FS !
     _reload_scripts_traits_from_filesystem()
@@ -90,10 +93,13 @@ func uninitialize() -> void:
         editor_settings.on_editor_indent_size_changed.disconnect(_on_editor_indent_size_changed)
 
     var editor_plugin:GodotTraitsEditorPlugin = GodotTraitsEditorPlugin.get_instance()
+    var fs_dock:FileSystemDock = EditorInterface.get_file_system_dock()
     if editor_plugin.resource_saved.is_connected(_on_resource_saved):
         editor_plugin.resource_saved.disconnect(_on_resource_saved)
-    if EditorInterface.get_file_system_dock().resource_removed.is_connected(_on_resource_removed):
-        EditorInterface.get_file_system_dock().resource_removed.disconnect(_on_resource_removed)
+    if fs_dock.resource_removed.is_connected(_on_resource_removed):
+        fs_dock.resource_removed.disconnect(_on_resource_removed)
+    if fs_dock.files_moved.is_connected(_on_files_moved):
+        fs_dock.files_moved.disconnect(_on_files_moved)
 
     _instance = null
 
@@ -112,29 +118,32 @@ func _on_trait_invoker_path_changed() -> void:
         # Then delete it from filesystem. Trick is : Godot Editor can not see this deletion
         # So we will run a FS scan, in order to make Godot Editor aware of this file deletion
         DirAccess.remove_absolute(old_gtraits_path)
-        var rss_filesystem: EditorFileSystem = EditorInterface.get_resource_filesystem()
-        var godot_scene_tree:SceneTree = EditorInterface.get_base_control().get_tree()
-        rss_filesystem.scan_sources()
-        while rss_filesystem.is_scanning():
-            await godot_scene_tree.create_timer(0.1).timeout
+        _scan_filesystem()
 
         # Now, FS has been scanned, so it's safe to save the script at its new location
         gtrait_script.resource_path = _gtraits_script_path
         ResourceSaver.save(gtrait_script, gtrait_script.resource_path)
     else:
-        _generate_trait_invoker()
+        _generate_gtraits_helper()
+
+func _scan_filesystem() -> void:
+    var rss_filesystem: EditorFileSystem = EditorInterface.get_resource_filesystem()
+    var godot_scene_tree:SceneTree = EditorInterface.get_base_control().get_tree()
+    rss_filesystem.scan_sources()
+    while rss_filesystem.is_scanning():
+        await godot_scene_tree.create_timer(0.1).timeout
 
 func _reload_scripts_traits_from_filesystem() -> void:
     _traits_by_scripts.clear()
     for script in _recursive_find_gd_scripts("res://"):
         _handle_script_changed(script)
-    _generate_trait_invoker()
+    _generate_gtraits_helper()
 
 func _on_editor_indent_type_changed() -> void:
-    _generate_trait_invoker()
+    _generate_gtraits_helper()
 
 func _on_editor_indent_size_changed() -> void:
-    _generate_trait_invoker()
+    _generate_gtraits_helper()
 
 func _on_resource_saved(resource:Resource) -> void:
     if _is_script_resource_of_interest(resource):
@@ -143,7 +152,22 @@ func _on_resource_saved(resource:Resource) -> void:
 func _on_resource_removed(resource:Resource) -> void:
     if _traits_by_scripts.has(resource.resource_path):
         _traits_by_scripts.erase(resource.resource_path)
-        _generate_trait_invoker()
+        _generate_gtraits_helper()
+
+func _on_files_moved(old_file_path:String, new_file_path:String) -> void:
+    var changed:bool = false
+
+    if _traits_by_scripts.has(old_file_path):
+        changed = true
+        _traits_by_scripts.erase(old_file_path)
+        _scan_filesystem()
+
+    if new_file_path.get_extension() == "gd":
+        var loaded_file:Resource = ResourceLoader.load(new_file_path, "", ResourceLoader.CACHE_MODE_REPLACE)
+        if _is_script_resource_of_interest(loaded_file):
+            changed = true
+            _handle_script_changed(loaded_file)
+            _generate_gtraits_helper()
 
 func _is_script_resource_of_interest(resource:Resource) -> bool:
     if not resource is GDScript:
@@ -170,7 +194,7 @@ func _handle_script_changed(script:Script) -> void:
         _traits_by_scripts[script.resource_path] = traits
 
     if changed:
-        _generate_trait_invoker()
+        _generate_gtraits_helper()
 
 func _get_script_traits(script:Script) -> Dictionary:
     var traits:Dictionary = { }
@@ -188,7 +212,14 @@ func _get_script_traits(script:Script) -> Dictionary:
 
     return traits
 
-func _generate_trait_invoker() -> void:
+func _generate_gtraits_helper() -> void:
+    # Before generating GTraits script, ensure that all references scripts are still available
+    # some may have been deleted from outside Godot Editor
+    for script_path in _traits_by_scripts:
+        if not FileAccess.file_exists(script_path):
+            _traits_by_scripts.erase(script_path)
+
+    # Then proceed to generation
     var indent_string:String = _get_indent_string()
 
     var content:String = ''
