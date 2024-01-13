@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://d3t3sstqna5sk"]
+
+[ext_resource type="Script" path="res://addons/godot-traits/examples/declare-and-use-traits/main.gd" id="1_2kr3p"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_2kr3p")

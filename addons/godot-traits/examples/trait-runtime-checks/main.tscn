@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://cvl5ktjd230rw"]
+
+[ext_resource type="Script" path="res://addons/godot-traits/examples/trait-runtime-checks/main.gd" id="1_aolq6"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_aolq6")

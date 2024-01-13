@@ -4,6 +4,7 @@
 # Godot-specific ignores
 *.import
 .import/
+.export/
 export.cfg
 export_presets.cfg
 
@@ -14,3 +15,9 @@ export_presets.cfg
 .mono/
 data_*/
 mono_crash.*.json
+
+# Ignore Script-IDE addon by Marius Hanl
+addons/script-ide/*
+
+# Do not commit my own trait invoker
+gtraits/helper/*

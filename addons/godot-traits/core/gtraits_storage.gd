@@ -1,7 +1,7 @@
 extends RefCounted
 class_name GTraitsStorage
 
-## 
+##
 ## Storage utility for [GTraits].
 ##
 ## [color=red]This is an internal API.[/color]
@@ -65,7 +65,7 @@ func get_traits(object:Object) -> Array[Script]:
         # Cast is necessary since an empty Array is not typed by default
         # This avoid class cast at runtime
         object.set_meta(META_TRAIT_SCRIPTS, [] as Array[Script])
-    
+
     # Then return traits.
     return object.get_meta(META_TRAIT_SCRIPTS) as Array[Script]
 
@@ -82,7 +82,7 @@ func get_trait_instance(object:Object, a_trait:Script, fail_if_not_found:bool = 
             assert(false, "Instance of trait '%s' not found" % _get_trait_class_name(a_trait))
         return null
 
-## Stores the trait instance of the object. 
+## Stores the trait instance of the object.
 ## [br][br]
 ## By default, the trait instance is stored as it's own type. The trait instance can be stored
 ## as another triat type (to handle trait class hierarchy for example) by specifying the
@@ -94,22 +94,22 @@ func store_trait_instance(object:Object, trait_instance:Object, as_trait:Script 
 
 ## Remove a trait from an object.
 ## [br][br]
-## Trait instance is not accessible anymore from it's trait type, or super and sub types. 
-## It is also automatically freed. 
+## Trait instance is not accessible anymore from it's trait type, or super and sub types.
+## It is also automatically freed.
 func remove_trait(a_trait:Script, object:Object) -> void:
     var trait_instance:Object = get_trait_instance(object, a_trait)
     assert(trait_instance != null, "Instance of trait '%s' not found" % _get_trait_class_name(a_trait))
-    
+
     # First, collect all trait that can be associated to the given trait : super classes and sub classes.
     # All must be removed from the object
     var object_traits:Array[Script] = get_traits(object)
     var traits_to_remove:Array[Script] = _type_oracle.filter_super_script_types_and_sub_script_types_of(object_traits, a_trait)
-    
+
     # Remove all traits from object, remove trait instance
     for trait_to_remove in traits_to_remove:
         object_traits.erase(trait_to_remove)
         object.remove_meta(_get_trait_instance_meta_name(trait_to_remove))
-    
+
     # Free trait instance
     _free_trait_instance(trait_instance)
 
@@ -123,9 +123,11 @@ func _get_trait_instance_meta_name(a_trait:Script) -> String:
 func _get_trait_class_name(a_trait:Script) -> String:
     if not a_trait.has_meta(META_TRAIT_CLASS_NAME):
         var trait_class_name:String = _type_oracle.get_script_class_name(a_trait)
-        assert(not trait_class_name.is_empty(), "Can not determine class name for trait '%s'" % a_trait.resource_path)
+        if trait_class_name.is_empty():
+            trait_class_name = "script_%s" % str(a_trait.get_instance_id()).replace('-', '_')
+        #assert(not trait_class_name.is_empty(), "Can not determine class name for trait '%s'" % a_trait.resource_path)
         a_trait.set_meta(META_TRAIT_CLASS_NAME, trait_class_name)
-        
+
     return a_trait.get_meta(META_TRAIT_CLASS_NAME)
 
 func _free_trait_instance(trait_instance:Object) -> void:
@@ -136,4 +138,4 @@ func _free_trait_instance(trait_instance:Object) -> void:
         pass
     else:
         trait_instance.free()
-        
+
