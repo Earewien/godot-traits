@@ -19,6 +19,7 @@ Given that Godot Engine lacks an official interface system, many developers reso
 - [ ] Automatic dependent trait declaration and creation
 - [x] Generation of an helper script to provide strong typed features and code completion in editor
 - [ ] Inline traits into scripts by using the `@inline_trait(TheTraitName)` annotation
+- [ ] Helper methods to invoke code if object _is a [something]_ or else invoke a _fallback method_
 
 ## 📄 Examples
 
