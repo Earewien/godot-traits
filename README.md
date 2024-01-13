@@ -112,7 +112,7 @@ func take_damage(damage:int) -> void:
 extends Node2D
 
 func _ready() -> void:
-    var crate:Node2D = preload("crate.gd")
+    var crate:Node2D = preload("crate.tscn").instantiate()
     add_child(crate)
     crate.on_hit.connect(_on_crate_hit)
 
@@ -201,150 +201,157 @@ _Examples of code completion and code navigation facilitated by the static typin
 
 #### 🔑 Strong trait usage runtime checks
 
-#### 🔑 Dynamic addition and removal of traits
+As developers, we often make strong assumptions about the objects we have, such as the type of node we expect in a callback (_it's always a car!_ for example). However, how can we ensure that we receive what we intended to receive? Most callback methods simply return objects of type `Node`. _Duck typing_ has its limitations when it comes to debugging your application (_if my object has the `kill` method, then call it, but what happens if it does not have the `kill` method? No error!_).
 
-#### 🔑 Automatic trait dependency injection
-
-#### 🔑 Traits inheritance
-
-### ➡️ Dynamic trait addition and removal
-
-_Godot Traits_ allows to dynamically add or remove traits to any object at runtime. This allows to conditionally active some behavior without having to maintain a state that must be accessible from anywhere. 
+_Godot Traits_ provides helpers to retrieve object traits with robust checks: if the trait is not available, an assertion error is triggered, and the _Godot Engine_ debugger stops at the erroneous frame. There is no need to write boilerplate code for complicated checks anymore!
 
 ```gdscript
+#####
+# File world.gd
+#####
+
+extends Node2D
+
+func _ready() -> void:
+    var npc = preload("npc.gd").new()
+    GTraits.set_killable(npc) # Out NPC can now be killed !
+    GTraits.as_moveable(npc).move(Vector2.RIGHT) # Will raise an exception since the NPC is not Moveable !
+```
+
+![image](addons/godot-traits/documentation/assets/gtraits_assertion_error_not_moveable.png)
+
+#### 🔑 Dynamic addition and removal of traits
+
+_Godot Traits_ enables dynamic addition or removal of traits to any object at runtime. This allows for the conditional activation of specific behavior without the need to maintain a state that must be accessible from everywhere.
+
+```gdscript
+#####
+# File crate.gd
+#####
+
 class_name Crate
 extends Node2D
 
 func _init() -> void:
     # Add Damageable trait to this crate
-    # This allows to call take_damage on this crate damageable trait
-    GTraits.add_trait_to(Damageable, self)
-
-func make_understructible() -> void:
-    # Removes the Damageable trait from this crate
-    GTraits.remove_trait_from(Damageable, self)
+    # This allows to call take_damage on this crate right after its creation
+    GTraits.set_damageable(self)
 
 
-class_name Game
+#####
+# File world.gd
+#####
+
 extends Node2D
 
-func _process_() -> void:
+func _ellapsed_time:float
+
+func _process(delta:float) -> void:
+    _ellapsed_time += delta
+
     var crate = get_node("crate")
+
     # Is always safe since we check if the trait is still available on the crate. No 
-    # needs maintain an internal crate state saying it's invisible or not
-    if GTraits.is_a(Damageable, crate):
-        GTraits.as_a(Damageable, crate).take_damage(1)
-```
-
-### ➡️ Strong runtime checks
-
-We, as developers, often make strong assumptions on what we have as objects, for example, what kind of node we receive in a callback (_it's always a car !_ for example). But, how to be sure we receive what we intented to receive ? Most of callback methods just return `Node` type objects. Duck typing has some limitations when it comes to debugging your application (_if my object has the __kill__ method then call it, but what happens if it does not have the __kill__ method? No error !_).
-
-_Godot Traits_ offers helpers to retrieve object traits with strong checks: if trait is not available, an assertion error is raised, and Godot Engine debugger stopped at the erroneous frame.
-
-```gdscript
-class_name Crate
-extends Node2D
-
-func _init() -> void:
-    # Create can take damage, but can not be moved !
-    GTraits.add_trait_to(Damageable, self)
-
-class_name Game
-extends Node2D
-
-func _process_() -> void:
-    var crate = get_node("crate")
-    # Move the crate only if it is moveable
-    # This code does not throw assertion error since we check that the crate is moveable
-    if GTraits.is_a(Moveable, crate):
-        GTraits.as_a(Moveable, crate).move(Vector2.RIGHT)
+    # needs maintain an internal crate state saying it's invicible or not
+    if GTraits.is_damageable(crate):
+        GTraits.as_damageable(crate).take_damage(1)
     
-    # This code will raise an assertion error since we asked for an unknown trait in the crate.If developer assumption is correct, it will always work, else GTraits will help the developer to undertand why its code is not working.
-    GTraits.as_a(Moveable, crate).move(Vector2.RIGHT)
+    # Make the crate invicible after 10 seconds: it will no longer take damages
+    if _ellapsed_time >= 10:
+        GTraits.unset_damageable(crate)
 ```
 
-### ➡️ Automatic trait dependencies injection
+#### 🔑 Automatic trait dependency injection
 
-Traits may depends on each other to work, or may need a _receiver_ object (the trait carrier) to implement behavior. For example, a _Damageable_ trait surely needs a _Healthable_ object to remove health from when damage are taken. 
+Traits may depend on each other to function, or they may require a _receiver object_ (the trait carrier) to implement a specific behavior. For instance, a _Damageable_ trait would likely need a _Healthable_ object to deduct health from when damage is taken.
 
-_Godot Traits_ offers automatic trait dependencies injection into trait constructors. 
-
-If trait constructor asked for an object of the same type as the trait _receiver_ (or no type), then the receiver is automatically injected into the trait.
+_Godot Traits_ provides automatic injection of trait dependencies into trait constructors. If a trait constructor requests an object of the same type as the _trait receiver_ (or no specific type), the _receiver_ is automatically injected into the trait.
 
 ```gdscript
-class_name Loggable
+#####
+# File damageable.gd
+#####
 
-var context
-
-# This trait needs a context to work (to log in chich context it has been called)
-# Since there is no asked type, it will be the trait receiver
-func _init(the_context) -> void:
-    context = the_context
-
-func log() -> void:
-    # do something
-    pass
-
-class_name Crate
-extends Node2D
-
-func _init() -> void:
-    # This will automatically make the crate to be the context of the Loggable trait that is beeing added
-    GTraits.add_trait_to(Loggable, self)
-    # So here, the assertion self == GTraits.as_a(Loggable, self).context is true !
-```
-
-If trait constructor asked for an object of another type as the _received_ type, then _Godot Traits_ will look into the _receiver_ to find a trait with that type, and inject it into the trait constructor.
-
-```gdscript
-class_name Contextualizable
+# @trait
+class_name Damageable
 
 var _receiver
 
-# This trait needs an object to work. Since there is no asked type, it will be the trait receiver
-func _init(receiver) -> void:
-    _receiver = receiver
+# This trait needs a context to work (an object to remove health from)
+# Since there is no asked type, it will be the trait receiver
+func _init(the_receiver) -> void:
+    _receiver = the_receiver
 
-func get_context() -> void:
-    return str(_receiver.get_instance_id())
+func take_damage(damage:int) -> void:
+    _receiver.health -= damage
 
-
-
-class_name Loggable
-
-var _context:Contextualizable
-
-# This trait needs a Contextualizable to work. GTraits will automatically find
-# that trait in the receiver object to inject it into this trait. If it can not be found, an assertion error will be raised.
-func _init(context:Contextualizable) -> void:
-    context = the_context
-
-func log() -> void:
-    print("Called in context %s" % _context.get_context())
-
-
-
-
-class_name Crate
+#####
+# File world.gd
+#####
 extends Node2D
 
 func _init() -> void:
-    # Add traits to the create. Order is important here, since Loggable trait needs
-    # the Contextualizable trait to be construct. As a consequence, the trait Contextualizable must be available in the crate before trying to add the Loggable trait.
-    GTraits.add_trait_to(Contextualizable, self)
-    GTraits.add_trait_to(Loggable, self)
+    var crate:Node2D = preload("crate.tscn").instantiate()
+    # This will automatically make the crate to be the receiver of the Damageable trait that is beeing added
+    GTraits.set_damageable(crate)
 ```
 
-⚠️ For now, only constructor with zero or one argument are handled by _Godot Traits_. 
-
-### ➡️ Trait classes hierarchy
-
-It's common to want to specialize some behavior using a sub-class. For example, specializing some code to handle critical damages: it's very like taking damage, but the amount of damage is not the same.
-
-_Godot Traits_ handles this the right way: in a transparent way! If a trait has be specialized and added to an object, it can be seamlessly accessed throught its generic trait.
+If the trait constructor requests an object of a different type than the _receiver_ type, then _Godot Traits_ will examine the _receiver_ to locate a trait with that type and inject it into the trait constructor.
 
 ```gdscript
+#####
+# File damageable.gd
+#####
+
+# @trait
+class_name Damageable
+
+var _healthable:Healthable
+
+# This trait needs a Healthable to work (an object to remove health from)
+# Healthable is also a trait. GTraits will check if the receiver object owns this traits, and automatically
+# inject the Healthable trait into this trait constructor
+func _init(the_healthable:Healthable) -> void:
+    _healthable = the_healthable
+
+func take_damage(damage:int) -> void:
+    _healthable.health -= damage
+
+#####
+# File world.gd
+#####
+extends Node2D
+
+func _init() -> void:
+    var crate:Node2D = preload("crate.tscn").instantiate()
+    GTraits.set_healthable(crate)
+    # This will automatically make Damageable trait to be construct using the Healthable trait declared above.
+    # Order is important here, since Damageable trait needs the Healthable trait, so Healthable trait should be
+    # declared BEFORE the Damageable trait.
+    GTraits.set_damageable(crate)
+```
+
+##### 📜 Automatic trait dependency injection rules
+
+- ⚠️ For now, only constructor with zero or one argument are handled by _Godot Traits_. See ___Roadmap___ for evolution,
+- If `GTraits` can not find the required trait to inject into another trait constructor, an assertion error is raised,
+
+![image](addons/godot-traits/documentation/assets/gtraits_assertion_error_can_not_instantiate.png)
+
+- Trait declaration order is important since a trait must exist into an object to be injectable into another trait constructor.
+
+#### 🔑 Traits inheritance
+
+It's common to desire to specialize certain behavior using a sub-class. For instance, customizing code to manage critical damages is akin to taking damage, but the damage amount may differ.
+
+_Godot Traits_ addresses this seamlessly! If a trait has been specialized and added to an object, it can be accessed seamlessly through its generic trait.
+
+```gdscript
+#####
+# File damageable.gd
+#####
+
+# @trait
 class_name Damageable
 
 func take_damage(damage:float) -> void:
@@ -354,37 +361,41 @@ func take_damage(damage:float) -> void:
 func _compute_damages(initial_damage:float) -> float:
     return initial_damage
 
+#####
+# File critical_damageable.gd
+#####
 
-
-
-
+# @trait
 class_name CriticalDamageable
 extends Damageable
 
 func _compute_damages(initial_damage:float) -> float:
-    return initial_damage * 2.5
+    return initial_damage * 2
 
-
-
+#####
+# File crate.gd
+#####
 
 class_name Crate
 extends Node2D
 
 func _init() -> void:
     # This crate will only takes critical damages !
-    GTraits.add_trait_to(CriticalDamageable, self)
+    GTraits.set_critical_damageable(self)
 
+#####
+# File world.gd
+#####
 
-
-
-class_name Game
 extends Node2D
 
 func _ready_() -> void:
-    var crate = get_node("crate")
+    var crate = preload("crate.tscn").instantiate()
 
     # We can access to the trait using it's real type, this will print 50 damages !
-    GTraits.as_a(CriticalDamageable, crate).take_damage(25)
+    GTraits.as_critical_damageable(crate).take_damage(25)
     # But we also can access to the trait using it's parent type, this will also print 50 damages since GTraits call the CriticalDamageable trait !
-    GTraits.as_a(Damageable, crate).take_damage(25)
+    GTraits.as_damageable(crate).take_damage(25)
+    # This is always true !
+    assert(GTraits.as_critical_damageable(crate) == GTraits.as_damageable(crate))
 ```
