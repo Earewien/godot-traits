@@ -89,7 +89,7 @@ class SomeClass:
 
 _Godot Traits_ includes a code generation tool that offers helper methods for declaring and utilizing traits. This tool actively monitors trait declarations and modifications, automatically generating a `GDScript` file named `gtraits.gd` in a configurable folder.
 
-Through this utility script, manipulating traits becomes easy and straightforward. It comprises four generic helper methods and four specific helper methods for each declared trait. For a trait named `Damageable`, the four methods are as follows:
+Through this utility script, manipulating traits becomes easy and straightforward. It comprises four generic helper methods and four specific helper methods for each declared trait. For a trait named `Damageable`, the six methods are as follows:
 - `set_damageable(object:Object) -> Damageable`: Applies the specified trait to make an object _Damageable_,
 - `is_damageable(object:Object) -> bool`: Checks if an object possesses the _Damageable_ trait,
 - `as_damageable(object:Object) -> Damageable`: Retrieves the _Damageable_ trait from the given object. This raises an error (in the form of a failed assertion) if the object _is not Damageable_,
