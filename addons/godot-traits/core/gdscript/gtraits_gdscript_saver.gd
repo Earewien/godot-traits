@@ -51,7 +51,7 @@ func save(script_path:String, script_content:String) -> Script:
             break
 
     # Save it to FS
-    _do_save_script(script)
+    _do_save_script(script, script_path)
     # Emit that script has changed
     script.reload(false)
     script.emit_changed()
@@ -69,12 +69,12 @@ func _get_or_create_script(script_path:String) -> Script:
         script = load(script_path)
     else:
         script = GDScript.new()
-        script.resource_path = script_path
-        _do_save_script(script)
+        _do_save_script(script, script_path)
 
     return script
 
-func _do_save_script(script:Script) -> void:
+func _do_save_script(script:Script, script_path:String) -> void:
+    script.resource_path = script_path
     DirAccess.make_dir_recursive_absolute(script.resource_path.get_base_dir())
     var error = ResourceSaver.save(script, script.resource_path, ResourceSaver.FLAG_CHANGE_PATH)
     if error != OK:

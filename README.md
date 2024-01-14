@@ -19,7 +19,7 @@ Given that Godot Engine lacks an official interface system, many developers reso
 - [ ] Automatic dependent trait declaration and creation
 - [x] Generation of an helper script to provide strong typed features and code completion in editor
 - [ ] Inline traits into scripts by using the `@inline_trait(TheTraitName)` annotation
-- [ ] Helper methods to invoke code if object _is a [something]_ or else invoke a _fallback method_
+- [x] Helper methods to invoke code if object _is a [something]_ or else invoke a _fallback method_
 
 ## 📄 Examples
 
@@ -89,10 +89,12 @@ class SomeClass:
 
 _Godot Traits_ includes a code generation tool that offers helper methods for declaring and utilizing traits. This tool actively monitors trait declarations and modifications, automatically generating a `GDScript` file named `gtraits.gd` in a configurable folder.
 
-Through this utility script, manipulating traits becomes easy and straightforward. It comprises four generic helper methods and four specific helper methods for each declared trait. For a trait named `Damageable`, the four methods are as follows:
+Through this utility script, manipulating traits becomes easy and straightforward. It comprises four generic helper methods and four specific helper methods for each declared trait. For a trait named `Damageable`, the six methods are as follows:
 - `set_damageable(object:Object) -> Damageable`: Applies the specified trait to make an object _Damageable_,
 - `is_damageable(object:Object) -> bool`: Checks if an object possesses the _Damageable_ trait,
 - `as_damageable(object:Object) -> Damageable`: Retrieves the _Damageable_ trait from the given object. This raises an error (in the form of a failed assertion) if the object _is not Damageable_,
+- `if_is_damageable(object:Object, if_callable:Callable, deferred_call:bool = false) -> Variant`: Invoke the `if_callable` function on the object's _Damageable_ trait only if the object possesses the _Damageable_ trait. The `if_callable` function accepts only one argument: the _Damageable_ trait. The returned value is the callable result. If `deferred_call` is `true`, the callable is called using `call_deferred` method and the function returns `null`,
+- `if_is_damageable_or_else(object:Object, if_callable:Callable, else_callable:Callable, deferred_call:bool = false) -> Variant`: Invoke the `if_callable` function on the object's _Damageable_ trait only if the object possesses the _Damageable_ trait, or else invoke the `else_callable` callable. The `if_callable` function accepts only one argument: the _Damageable_ trait, and the `else_callable` takes no argument. The returned value is the callable result. If `deferred_call` is `true`, the callable is called using `call_deferred` method and the function returns `null`,
 - `unset_damageable(object:Object) -> void`: removes the _Damageable_ trait from the object.
 
 ```gdscript
@@ -111,16 +113,31 @@ func take_damage(damage:int) -> void:
 #####
 extends Node2D
 
+# #####
+# GTraits class contains damageable helpers since Godot Traits has automatically found the Damageable trait.
+# So we can write the following code
+# #####
+
 func _ready() -> void:
     var crate:Node2D = preload("crate.tscn").instantiate()
     add_child(crate)
+    GTraits.set_damageable(crate)
     crate.on_hit.connect(_on_crate_hit)
 
 func _on_crate_hit() -> void:
     var crate:Node2D = get_node("crate")
-    # GTraits class contains damageable helpers since Godot Traits has automatically found the Damageable trait.
     if GTraits.is_damageable(crate):
         GTraits.as_damageable(crate).take_damage(10)
+    # Can also be rewrite as follow
+    GTraits.if_is_damageable(crate, func(obj:Damageable): obj.take_damage(10))
+    # Can also be rewrite as follow
+    GTraits.if_is_damageable_or_else(
+        crate, 
+        func(obj:Damageable): obj.take_damage(10),
+        func(): print("I'm invicible!")
+    )
+    # Finally, can unset damageable trait
+    GTraits.unset_damageable(crate)
 ```
 
 _Godot Traits_ generation tool can also generate helper methods for _nested_ trait classes. As _nested_ class names may not be unique across the project and to prevent generating the same helper method twice, the generation tool utilizes the trait's _parent classes_ as context to create a unique helper name.
@@ -143,8 +160,8 @@ class Killable:
     pass
 
 # Will automatically generates helpers methods:
-# set_traits_some_class_damageable, is_traits_some_class_damageable, as_traits_some_class_damageable, unset_traits_some_class_damageable
-# set_traits_killable, is_traits_killable, as_traits_killable, unset_traits_killable
+# set_traits_some_class_damageable, is_traits_some_class_damageable, as_traits_some_class_damageable, unset_traits_some_class_damageable, if_is_traits_some_class_damageable, if_is_traits_some_class_damageable_or_else
+# set_traits_killable, is_traits_killable, as_traits_killable, unset_traits_killable, if_is_traits_killable, if_is_traits_killable_or_else
 ```
 
 _Godot Traits_ generation tool honors the _alias_ trait annotation parameter by creating helper methods named according to the specified alias.
@@ -169,8 +186,8 @@ class CriticalDamageable extends Damageable:
         return initial_damage * 2
 
 # Will automatically generates helpers methods:
-# set_critical_damageable, is_critical_damageable, as_critical_damageable, unset_critical_damageable
-# instead of creating helpers methods:
+# set_critical_damageable, is_critical_damageable, as_critical_damageable, unset_critical_damageable, if_is_critical_damageable, if_is_critical_damageable_or_else
+# instead of creating those helpers methods:
 # set_damageable_critical_damageable, ...
 ```
 
