@@ -336,7 +336,7 @@ func _generate_gtraits_helper() -> void:
 
             generated_traits.append(trait_name_alias if not trait_name_alias.is_empty() else trait_full_name)
 
-    _gdscript_saver.save(_gtraits_script_path, content)
+    _gdscript_saver.save(GTraitsEditorSettings.get_instance().get_gtraits_helper_output_path(), content)
 
 func _get_indent_string() -> String:
     var indent_type:GTraitsEditorSettings.IndentType = GTraitsEditorSettings.get_instance().get_editor_indent_type()
