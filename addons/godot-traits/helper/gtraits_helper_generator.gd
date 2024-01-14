@@ -257,12 +257,12 @@ func _generate_gtraits_helper() -> void:
     content += indent_string + "GTraitsCore.remove_trait_from(a_trait, object)\n"
     content += "\n"
     content += "## Shortcut for [method GTraitsCore.if_is_a]\n"
-    content += "static func if_is_a(a_trait:Script, object:Object, if_callable:Callable) -> Variant:\n"
-    content += indent_string + "return GTraitsCore.if_is_a(a_trait, object, if_callable)\n"
+    content += "static func if_is_a(a_trait:Script, object:Object, if_callable:Callable, deferred_call:bool = false) -> Variant:\n"
+    content += indent_string + "return GTraitsCore.if_is_a(a_trait, object, if_callable, deferred_call)\n"
     content += "\n"
     content += "## Shortcut for [method GTraitsCore.if_is_a_or_else]\n"
-    content += "static func if_is_a_or_else(a_trait:Script, object:Object, if_callable:Callable, else_callable:Callable) -> Variant:\n"
-    content += indent_string + "return GTraitsCore.if_is_a_or_else(a_trait, object, if_callable, else_callable)\n"
+    content += "static func if_is_a_or_else(a_trait:Script, object:Object, if_callable:Callable, else_callable:Callable, deferred_call:bool = false) -> Variant:\n"
+    content += indent_string + "return GTraitsCore.if_is_a_or_else(a_trait, object, if_callable, else_callable, deferred_call)\n"
     content += "\n"
     content += "#endregion\n"
     content += "\n"
@@ -318,16 +318,24 @@ func _generate_gtraits_helper() -> void:
                 content += "## Calls the given [Callable] if and only if an object is a [%s]. The callable.\n" % trait_full_name
                 content += "## takes the [%s] trait as argument. Returns the callable result if the object is a\n" % trait_full_name
                 content += "## [%s], [code]null[/code] otherwise.\n" % trait_full_name
+                content += "## [br][br]\n"
+                content += "## If [code]deferred_call[/code] is [code]true[/code], the callable is called using [method Callable.call_deferred] and\n"
+                content += "## the returned value will always be [code]null[/code].\n"
+                content += "## [br][br]\n"
                 content += "## See [method GTraits.if_is_a] for more details.\n"
-                content += "static func if_is_%s(object:Object, if_callable:Callable) -> Variant:\n" % snaked_trait_full_name
-                content += indent_string + "return if_is_a(%s, object, if_callable)\n" % trait_full_name
+                content += "static func if_is_%s(object:Object, if_callable:Callable, deferred_call:bool = false) -> Variant:\n" % snaked_trait_full_name
+                content += indent_string + "return if_is_a(%s, object, if_callable, deferred_call)\n" % trait_full_name
                 content += "\n"
                 content += "## Calls the given [i]if[/i] [Callable] if and only if an object is a [%s], or else calls\n" % trait_full_name
                 content += "## the given [i]else[/i] callable. The [i]if[/i] callable takes the [%s] trait as argument, and the\n" % trait_full_name
                 content += "## [i]else[/i] callable does not take any argument. Returns the called callable result..\n"
+                content += "## [br][br]\n"
+                content += "## If [code]deferred_call[/code] is [code]true[/code], the callable is called using [method Callable.call_deferred] and\n"
+                content += "## the returned value will always be [code]null[/code].\n"
+                content += "## [br][br]\n"
                 content += "## See [method GTraits.if_is_a_or_else] for more details.\n"
-                content += "static func if_is_%s_or_else(object:Object, if_callable:Callable, else_callable:Callable) -> Variant:\n" % snaked_trait_full_name
-                content += indent_string + "return if_is_a_or_else(%s, object, if_callable, else_callable)\n" % trait_full_name
+                content += "static func if_is_%s_or_else(object:Object, if_callable:Callable, else_callable:Callable, deferred_call:bool = false) -> Variant:\n" % snaked_trait_full_name
+                content += indent_string + "return if_is_a_or_else(%s, object, if_callable, else_callable, deferred_call)\n" % trait_full_name
                 content += "\n"
             else:
                 content += "# Trait %s is configured to be accessed by alias %s" % [trait_full_name, trait_name_alias]
@@ -355,16 +363,24 @@ func _generate_gtraits_helper() -> void:
                 content += "## Calls the given [Callable] if and only if an object is a [%s] as trait alias [b]%s[/b]. The callable.\n" % [trait_full_name, trait_name_alias]
                 content += "## takes the [%s] trait as argument. Returns the callable result if the object is a\n" % trait_full_name
                 content += "## [%s], [code]null[/code] otherwise.\n" % trait_full_name
+                content += "## [br][br]\n"
+                content += "## If [code]deferred_call[/code] is [code]true[/code], the callable is called using [method Callable.call_deferred] and\n"
+                content += "## the returned value will always be [code]null[/code].\n"
+                content += "## [br][br]\n"
                 content += "## See [method GTraits.if_is_a] for more details.\n"
-                content += "static func if_is_%s(object:Object, if_callable:Callable) -> Variant:\n" % snaked_trait_name_alias
-                content += indent_string + "return if_is_a(%s, object, if_callable)\n" % trait_full_name
+                content += "static func if_is_%s(object:Object, if_callable:Callable, deferred_call:bool = false) -> Variant:\n" % snaked_trait_name_alias
+                content += indent_string + "return if_is_a(%s, object, if_callable, deferred_call)\n" % trait_full_name
                 content += "\n"
                 content += "## Calls the given [i]if[/i] [Callable] if and only if an object is a [%s] as trait alias [b]%s[/b], or else calls\n" % [trait_full_name, trait_name_alias]
                 content += "## the given [i]else[/i] callable. The [i]if[/i] callable takes the [%s] trait as argument, and the\n" % trait_full_name
-                content += "## [i]else[/i] callable does not take any argument. Returns the called callable result..\n"
+                content += "## [i]else[/i] callable does not take any argument. Returns the called callable result.\n"
+                content += "## [br][br]\n"
+                content += "## If [code]deferred_call[/code] is [code]true[/code], the callable is called using [method Callable.call_deferred] and\n"
+                content += "## the returned value will always be [code]null[/code].\n"
+                content += "## [br][br]\n"
                 content += "## See [method GTraits.if_is_a_or_else] for more details.\n"
-                content += "static func if_is_%s_or_else(object:Object, if_callable:Callable, else_callable:Callable) -> Variant:\n" % snaked_trait_name_alias
-                content += indent_string + "return if_is_a_or_else(%s, object, if_callable, else_callable)\n" % trait_full_name
+                content += "static func if_is_%s_or_else(object:Object, if_callable:Callable, else_callable:Callable, deferred_call:bool = false) -> Variant:\n" % snaked_trait_name_alias
+                content += indent_string + "return if_is_a_or_else(%s, object, if_callable, else_callable, deferred_call)\n" % trait_full_name
                 content += "\n"
 
             content += "#endregion\n"

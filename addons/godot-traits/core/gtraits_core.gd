@@ -110,28 +110,46 @@ static func as_a(a_trait:Script, object:Object) -> Object:
 ## Calls the given [Callable] if and only if an object has a given trait. The callable
 ## takes the asked trait as argument. Returns the callable result if the object has the
 ## given trait, [code]null[/code] otherwise.
-## [br]
+## [br][br]
+## If [code]deferred_call[/code] is [code]true[/code], the callable is called using [method Callable.call_deferred] and
+## the returned value will always be [code]null[/code].
+## [br][br]
 ## See [method GTraitsCore.is_a] for more details about trait testing.
-static func if_is_a(a_trait:Script, object:Object, if_callable:Callable) -> Variant:
+static func if_is_a(a_trait:Script, object:Object, if_callable:Callable, deferred_call:bool = false) -> Variant:
     var trait_instance:Object = _traits_storage.get_trait_instance(object, a_trait)
     if trait_instance != null:
         assert(if_callable.is_valid(), "Callable must be valid")
-        return if_callable.call(trait_instance)
+        if deferred_call:
+            if_callable.call_deferred(trait_instance)
+            return null
+        else:
+            return if_callable.call(trait_instance)
     return null
 
 ## Calls the given [i]if[/i] [Callable] if and only if an object has a given trait, or else calls
 ## the given [i]else[/i] callable. The [i]if[/i] callable takes the asked trait as argument, and the
 ## [i]else[/i] callable does not take any argument. Returns the called callable result.
-## [br]
+## [br][br]
+## If [code]deferred_call[/code] is [code]true[/code], the callable is called using [method Callable.call_deferred] and
+## the returned value will always be [code]null[/code].
+## [br][br]
 ## See [method GTraitsCore.is_a] for more details about trait testing.
-static func if_is_a_or_else(a_trait:Script, object:Object, if_callable:Callable, else_callable:Callable) -> Variant:
+static func if_is_a_or_else(a_trait:Script, object:Object, if_callable:Callable, else_callable:Callable, deferred_call:bool = false) -> Variant:
     var trait_instance:Object = _traits_storage.get_trait_instance(object, a_trait)
     if trait_instance != null:
         assert(if_callable.is_valid(), "Callable must be valid")
-        return if_callable.call(trait_instance)
+        if deferred_call:
+            if_callable.call_deferred(trait_instance)
+            return null
+        else:
+            return if_callable.call(trait_instance)
     else:
         assert(else_callable.is_valid(), "Callable must be valid")
-        return else_callable.call()
+        if deferred_call:
+            else_callable.call_deferred()
+            return null
+        else:
+            return else_callable.call()
 
 #------------------------------------------
 # Private functions
