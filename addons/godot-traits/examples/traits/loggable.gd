@@ -1,4 +1,6 @@
-extends Node2D
+# @trait
+class_name Loggable
+extends RefCounted
 
 #------------------------------------------
 # Constants
@@ -20,22 +22,22 @@ extends Node2D
 # Private variables
 #------------------------------------------
 
+var _log_context:String
+
 #------------------------------------------
 # Godot override functions
 #------------------------------------------
 
-func _init() -> void:
-    # Healthable trait depends on Killable trait, so by setting this NPC Healthable, it will
-    # also be Killable ! Healthable and Killable requires a Loggable to work, so the NPC will
-    # became a Loggable too
-    GTraits.set_healthable(self)
-    assert(GTraits.is_killable(self), "Should be killable !")
-    assert(GTraits.is_loggable(self), "Should be loggable !")
-    GTraits.set_damageable(self)
+# Automatically requires the trait receiver as a dependency
+func _init(receiver) -> void:
+    _log_context = str(receiver.get_instance_id())
 
 #------------------------------------------
 # Public functions
 #------------------------------------------
+
+func log(message:String) -> void:
+    print("%s| %s" % [_log_context, message])
 
 #------------------------------------------
 # Private functions

@@ -24,9 +24,17 @@ var is_killed:bool = false
 # Private variables
 #------------------------------------------
 
+var _loggable:Loggable
+
 #------------------------------------------
 # Godot override functions
 #------------------------------------------
+
+# Loggable trait will automatically be constructed, registered into receiver and injected into
+# this constructor, unless receiver already has a Loggable trait, in this case the existing trait
+# will be directly injected
+func _init(loggable:Loggable) -> void:
+    _loggable = loggable
 
 #------------------------------------------
 # Public functions
@@ -35,7 +43,7 @@ var is_killed:bool = false
 func kill() -> void:
     if not is_killed:
         is_killed = true
-        print("I've been killed !")
+        _loggable.log("I've been killed !")
 
 #------------------------------------------
 # Private functions

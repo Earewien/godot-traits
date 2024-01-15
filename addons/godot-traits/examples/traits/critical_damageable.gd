@@ -2,7 +2,6 @@
 class_name CriticalDamageable
 extends Damageable
 
-
 #------------------------------------------
 # Constants
 #------------------------------------------
@@ -29,7 +28,9 @@ extends Damageable
 
 func _notification(what: int) -> void:
     if what == NOTIFICATION_PREDELETE:
-        print("GTraitsCoreExampleCriticalDamageable : I'm beeing freed !")
+        # The Loggable trait is inherited from the Damageable trait !
+        # So it's accessible here too !
+        _loggable.log("(crit) I'm beeing freed !")
 
 #------------------------------------------
 # Public functions
