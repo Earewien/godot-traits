@@ -37,15 +37,35 @@ var _type_oracle:GTraitsTypeOracle = GTraitsTypeOracle.new()
 #------------------------------------------
 
 func instantiate_trait(a_trait:Script, receiver:Object) -> Object:
-    # If receiver already has the given trait, return it immediatly, else try to instantiate it
-    var trait_instance:Object = _traits_storage.get_trait_instance(receiver, a_trait)
-    return trait_instance if is_instance_valid(trait_instance) else _instantiate_trait_for_receiver(a_trait, receiver)
+    return _instantiate_trait(a_trait, receiver)
 
 #------------------------------------------
 # Private functions
 #------------------------------------------
 
-func _instantiate_trait_for_receiver(a_trait:Script, receiver:Object) -> Object:
+func _instantiate_trait(a_trait:Script, receiver:Object, encoutered_traits:Array[Script] = []) -> Object:
+    # Check there is no cyclic dependencies in progress
+    if encoutered_traits.has(a_trait):
+        var cyclic_dependency_string:String = encoutered_traits \
+            .map(_type_oracle.get_script_class_name) \
+            .reduce(func(accum, name): return "%s -> %s" % [accum, name])
+        cyclic_dependency_string = "%s -> %s" % [cyclic_dependency_string, _type_oracle.get_script_class_name(a_trait)]
+        assert(false, "⚠️ Cyclic depdendency detected during trait instantiation: %s" % cyclic_dependency_string)
+        return null
+    # Register this trait to be encountered
+    encoutered_traits.append(a_trait)
+
+    # If receiver already has the given trait, return it immediatly, else try to instantiate it
+    var trait_instance:Object = _traits_storage.get_trait_instance(receiver, a_trait)
+    if not is_instance_valid(trait_instance):
+        trait_instance = _instantiate_trait_for_receiver(a_trait, receiver, encoutered_traits)
+
+    # This trait has been handled, so we can pop it out
+    encoutered_traits.pop_back()
+
+    return trait_instance
+
+func _instantiate_trait_for_receiver(a_trait:Script, receiver:Object, encoutered_traits:Array[Script]) -> Object:
     assert(a_trait.can_instantiate(), "Trait '%s' can not be instantiated" % _traits_storage.get_trait_class_name(a_trait))
 
     # Trait constructor ('_init' method) can take 0 or multiple parameters.
@@ -62,6 +82,7 @@ func _instantiate_trait_for_receiver(a_trait:Script, receiver:Object) -> Object:
     # Look for _init method to check if it takes parameters or not
     for method in a_trait.get_script_method_list():
         if method.name == "_init":
+            print(method)
             # Find/construct required arguments
             for arg in method.args:
                 # Is it the receiver itself, or a trait ?
@@ -82,7 +103,7 @@ func _instantiate_trait_for_receiver(a_trait:Script, receiver:Object) -> Object:
                     else:
                         var needed_trait:Script = _type_oracle.get_script_from_class_name(constructor_argument_class_name)
                         assert(is_instance_valid(needed_trait), "Trait '%s' can not be found in project." % constructor_argument_class_name)
-                        var trait_instance:Object = instantiate_trait(needed_trait, receiver)
+                        var trait_instance:Object = _instantiate_trait(needed_trait, receiver, encoutered_traits)
                         assert(is_instance_valid(trait_instance), "Unable to instantiate trait '%s'." % constructor_argument_class_name)
                         if not is_instance_valid(trait_instance):
                             error_encountered = true

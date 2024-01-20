@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://ckdj32ggju5dr"]
+
+[ext_resource type="Script" path="res://addons/godot-traits/examples/cyclic-dependency-detection/main.gd" id="1_ayw7t"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_ayw7t")
