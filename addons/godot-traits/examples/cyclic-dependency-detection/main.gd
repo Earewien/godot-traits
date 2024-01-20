@@ -24,14 +24,11 @@ extends Node2D
 # Godot override functions
 #------------------------------------------
 
-func _init() -> void:
-    # Healthable trait depends on Killable trait, so by setting this NPC Healthable, it will
-    # also be Killable ! Healthable and Killable requires a Loggable to work, so the NPC will
-    # became a Loggable too
-    GTraits.set_healthable(self)
-    assert(GTraits.is_killable(self), "Should be killable !")
-    assert(GTraits.is_loggable(self), "Should be loggable !")
-    GTraits.set_damageable(self)
+func _ready() -> void:
+    # By setting this object as a Cyclic1, Gtraits will auto instantiate all its dependencies:
+    # so Cyclic2, Cyclic3, then Cyclic4. But Cyclic4 requires a Cyclic2 to be instantiate. It's a cyclic
+    # dependencies and it will raise an assertion error
+    GTraits.set_cyclic_1(self)
 
 #------------------------------------------
 # Public functions

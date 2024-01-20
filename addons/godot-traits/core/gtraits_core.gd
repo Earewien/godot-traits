@@ -58,8 +58,8 @@ class_name GTraitsCore
 # Private variables
 #------------------------------------------
 
-static var _type_oracle:GTraitsTypeOracle = GTraitsTypeOracle.new()
 static var _traits_storage:GTraitsStorage = GTraitsStorage.new()
+static var _trait_builder:GTraitsTraitBuilder = GTraitsTraitBuilder.new()
 
 #------------------------------------------
 # Godot override functions
@@ -68,6 +68,10 @@ static var _traits_storage:GTraitsStorage = GTraitsStorage.new()
 #------------------------------------------
 # Public functions
 #------------------------------------------
+
+## Declare a class as a trait. It then becomes available for several operations on trait.
+static func register_trait(a_trait:Script) -> void:
+    _trait_builder.register_trait(a_trait)
 
 ## Returns [code]true[/code] if an object has a given trait, [code]false[/code] otherwise.
 static func is_a(a_trait:Script, object:Object) -> bool:
@@ -93,7 +97,7 @@ static func add_trait_to(a_trait:Script, object:Object) -> Object:
     else:
         # Register trait into object, and instantiate it
         object_traits.push_back(a_trait)
-        trait_instance = _instantiate_trait_for_object(a_trait, object)
+        trait_instance = _trait_builder.instantiate_trait(a_trait, object)
 
     return trait_instance
 
@@ -155,56 +159,3 @@ static func if_is_a_or_else(a_trait:Script, object:Object, if_callable:Callable,
 # Private functions
 #------------------------------------------
 
-static func _instantiate_trait_for_object(a_trait:Script, object:Object) -> Object:
-    assert(a_trait.can_instantiate(), "Trait '%s' can not be instantiated" % _traits_storage.get_trait_class_name(a_trait))
-
-    # Trait constructor ('_init' method) can take 0 or 1 parameter.
-    # If it takes one parameter, it can either be:
-    # - the object itself, since trait may need contextual usage to work
-    # - a trait of the object itself
-    var constructor_parameter:Object = null
-    var constructor_has_argument:bool = false
-
-    # Look for _init method to check if it takes parameters or not
-    for method in a_trait.get_script_method_list():
-        if method.name == "_init":
-            if method.args.is_empty():
-                # No parameter in trait constructor, simplest use case !
-                pass
-            elif method.args.size() == 1:
-                # Trait takes one parameter for sure
-                constructor_has_argument = true
-                # But, is it the object itself, or one of its already declared traits ?
-                var constructor_argument_class_name:String = method.args[0].class_name
-                if constructor_argument_class_name.is_empty():
-                    # Argument is not strongly typed. Just pass the object itself as parameter
-                    # Hope for the best !
-                    constructor_parameter = object
-                else:
-                    # Two possibilities :
-                    # - parameter is an instance of the object itself : the object is the expected parameter
-                    # - else, parameter is an instance of the object traits, so try to get it
-                    if _type_oracle.is_object_instance_of(constructor_argument_class_name, object):
-                        constructor_parameter = object
-                    else:
-                        var needed_trait:Script = _type_oracle.get_script_from_class_name(constructor_argument_class_name)
-                        assert(is_instance_valid(needed_trait), "Trait '%s' can not be found in project." % constructor_argument_class_name)
-                        constructor_parameter = _traits_storage.get_trait_instance(object, needed_trait, true)
-            else:
-                assert(false, "Trait constructor can not be called")
-
-            # Ugly but efficient: there is only one _init method in a script !
-            break
-
-    # Instantiate trait and save it into the object trait instances storage
-    var trait_instance:Object = a_trait.new(constructor_parameter) if constructor_has_argument else a_trait.new()
-    _traits_storage.store_trait_instance(object, trait_instance)
-
-    # If trait has parent classes, to prevent to create new trait instance if parent classes are asked for this
-    # object, register this trait instance has the one to be returned when a parent class is asked (POO style)
-    var parent_script:Script = a_trait.get_base_script()
-    while(parent_script != null):
-        _traits_storage.store_trait_instance(object, trait_instance, parent_script)
-        parent_script = parent_script.get_base_script()
-
-    return trait_instance

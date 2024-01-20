@@ -1,4 +1,7 @@
-extends Node2D
+extends RefCounted
+class_name NotATrait
+
+# Here to demonstrate how Godot Traits detect wrong trait usage
 
 #------------------------------------------
 # Constants
@@ -23,15 +26,6 @@ extends Node2D
 #------------------------------------------
 # Godot override functions
 #------------------------------------------
-
-func _init() -> void:
-    # Healthable trait depends on Killable trait, so by setting this NPC Healthable, it will
-    # also be Killable ! Healthable and Killable requires a Loggable to work, so the NPC will
-    # became a Loggable too
-    GTraits.set_healthable(self)
-    assert(GTraits.is_killable(self), "Should be killable !")
-    assert(GTraits.is_loggable(self), "Should be loggable !")
-    GTraits.set_damageable(self)
 
 #------------------------------------------
 # Public functions

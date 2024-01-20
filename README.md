@@ -15,8 +15,8 @@ Given that Godot Engine lacks an official interface system, many developers reso
 ## 🗺️ Roadmap
 
 - [x] Core trait system
-- [ ] Automatic multi trait dependencies injection 
-- [ ] Automatic dependent trait declaration and creation
+- [x] Automatic multi trait dependencies injection 
+- [x] Automatic dependent trait declaration and creation
 - [x] Generation of an helper script to provide strong typed features and code completion in editor
 - [ ] Inline traits into scripts by using the `@inline_trait(TheTraitName)` annotation
 - [x] Helper methods to invoke code if object _is a [something]_ or else invoke a _fallback method_
@@ -278,11 +278,11 @@ func _process(delta:float) -> void:
         GTraits.unset_damageable(crate)
 ```
 
-#### 🔑 Automatic trait dependency injection
+#### 🔑 Automatic trait dependencies injection
 
-Traits may depend on each other to function, or they may require a _receiver object_ (the trait carrier) to implement a specific behavior. For instance, a _Damageable_ trait would likely need a _Healthable_ object to deduct health from when damage is taken.
+Traits may depend on each other to function, or they may require a _receiver object_ (the trait carrier) to implement a specific behavior. For instance, a _Damageable_ trait would likely need a _Healthable_ object to deduct health from when damage is taken. It may also requires a _Loggable_ trait to do some debug prints.
 
-_Godot Traits_ provides automatic injection of trait dependencies into trait constructors. If a trait constructor requests an object of the same type as the _trait receiver_ (or no specific type), the _receiver_ is automatically injected into the trait.
+_Godot Traits_ provides automatic injection of trait dependencies into trait constructors. If a trait constructor requests an object of the same type as the _trait receiver_ (or no specific type), the _receiver_ is automatically injected into the trait. If the trait constructor requires other traits, thoses traits will be retrieved from the _trait receiver_ itself. If some traits can not be resolved in the _receiver_, they are automatically (recursively) instantiated, registered into the _trait receiver_ for future usage, and injected into the instantiating trait.
 
 ```gdscript
 #####
@@ -324,15 +324,20 @@ If the trait constructor requests an object of a different type than the _receiv
 class_name Damageable
 
 var _healthable:Healthable
+var _loggable:Loggable
 
-# This trait needs a Healthable to work (an object to remove health from)
-# Healthable is also a trait. GTraits will check if the receiver object owns this traits, and automatically
-# inject the Healthable trait into this trait constructor
-func _init(the_healthable:Healthable) -> void:
+# This trait needs both Healthable (an object to remove health from) and Loggable (an object that is 
+# able to print debug logs) to work. Healthable is also a trait. GTraits will check if the receiver
+# object owns those traits, and automatically inject them intothis trait constructor.
+# If the receiver does not have the required traits, they are automatically instantiated, registered into
+# the receiver and injected into this trait.
+func _init(the_healthable:Healthable, the_loggable:Loggable) -> void:
     _healthable = the_healthable
+    _loggable = the_loggable
 
 func take_damage(damage:int) -> void:
     _healthable.health -= damage
+    _loggable.log("Took %d damage!" % damage)
 
 #####
 # File world.gd
@@ -341,21 +346,27 @@ extends Node2D
 
 func _init() -> void:
     var crate:Node2D = preload("crate.tscn").instantiate()
-    GTraits.set_healthable(crate)
-    # This will automatically make Damageable trait to be construct using the Healthable trait declared above.
-    # Order is important here, since Damageable trait needs the Healthable trait, so Healthable trait should be
-    # declared BEFORE the Damageable trait.
+    # Only the Damageable trait is set initially
+    # Now, when the Damageable trait is constructed, it automatically declares, creates,
+    # and injects the required Healthable and Loggable traits into the crate
     GTraits.set_damageable(crate)
+    assert(GTraits.is_damageable(crate), "It is Damageable !")
+    assert(GTraits.is_loggable(crate), "It is Loggable too !")
+    assert(GTraits.is_healthable(crate), "It is Healthable too !")
 ```
 
-##### 📜 Automatic trait dependency injection rules
+##### 📜 Automatic trait dependencies injection rules
 
-- ⚠️ For now, only constructor with zero or one argument are handled by _Godot Traits_. See ___Roadmap___ for evolution,
-- If `GTraits` can not find the required trait to inject into another trait constructor, an assertion error is raised,
+- When automatically instantiating traits, developers need to be mindful of cyclic dependencies—cases where traits depend on each other. _Godot Traits_ cannot construct such traits due to the inherent cyclic structure. If encountered, an assertion error is raised, providing details about the cyclic dependency,
 
-![image](addons/godot-traits/documentation/assets/gtraits_assertion_error_can_not_instantiate.png)
+![image](addons/godot-traits/documentation/assets/gtraits_cyclic_dep_detection.png)
 
-- Trait declaration order is important since a trait must exist into an object to be injectable into another trait constructor.
+- The _auto-instantiation_ feature in _Godot Traits_ is limited to handling trait instances. If a trait's constructor demands an instance of a type that is not a trait, an assertion error will be raised. This limitation is essential as generic types may not adhere to trait rules and cannot be treated as such,
+
+![image](addons/godot-traits/documentation/assets/gtraits_not_a_trait_error.png)
+
+- Default arguments in trait constructors are not considered. 
+
 
 #### 🔑 Traits inheritance
 

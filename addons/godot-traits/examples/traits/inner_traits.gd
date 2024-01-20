@@ -1,4 +1,19 @@
-extends Node2D
+class_name InnerTraits
+
+# Demonstrate inner class trait declaration
+
+# @trait(alias=Moveable)
+class Moveable extends RefCounted:
+
+    # This is the receiver as a CharacterBody2D
+    var _character:CharacterBody2D
+
+    func _init(character:CharacterBody2D) -> void:
+        _character = character
+
+    func move(dir:Vector2) -> void:
+        _character.velocity += dir * 300
+        _character.move_and_slide()
 
 #------------------------------------------
 # Constants
@@ -23,15 +38,6 @@ extends Node2D
 #------------------------------------------
 # Godot override functions
 #------------------------------------------
-
-func _init() -> void:
-    # Healthable trait depends on Killable trait, so by setting this NPC Healthable, it will
-    # also be Killable ! Healthable and Killable requires a Loggable to work, so the NPC will
-    # became a Loggable too
-    GTraits.set_healthable(self)
-    assert(GTraits.is_killable(self), "Should be killable !")
-    assert(GTraits.is_loggable(self), "Should be loggable !")
-    GTraits.set_damageable(self)
 
 #------------------------------------------
 # Public functions
