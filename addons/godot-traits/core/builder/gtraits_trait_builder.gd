@@ -25,6 +25,8 @@ class_name GTraitsTraitBuilder
 # Private variables
 #------------------------------------------
 
+# All known traits, for dep injection. As a dictionary to check trait in o(1)
+var _known_traits:Dictionary
 var _traits_storage:GTraitsStorage = GTraitsStorage.new()
 var _type_oracle:GTraitsTypeOracle = GTraitsTypeOracle.new()
 
@@ -36,6 +38,12 @@ var _type_oracle:GTraitsTypeOracle = GTraitsTypeOracle.new()
 # Public functions
 #------------------------------------------
 
+## Declare a class as a trait, making it available for dependency injection
+func register_trait(a_trait:Script) -> void:
+    _known_traits[a_trait] = true
+
+## Retuns the trait for the given receiver. If the trait already exists, it is just returned. Otherwise,
+## it is instantiated, registered into the receiver and returned.
 func instantiate_trait(a_trait:Script, receiver:Object) -> Object:
     return _instantiate_trait(a_trait, receiver)
 
@@ -44,13 +52,18 @@ func instantiate_trait(a_trait:Script, receiver:Object) -> Object:
 #------------------------------------------
 
 func _instantiate_trait(a_trait:Script, receiver:Object, encoutered_traits:Array[Script] = []) -> Object:
+    # Check if this is an actual trait
+    if not _known_traits.get(a_trait, false):
+        assert(false, "Type '%s' is not a trait and can not be automatically instantiated" % _type_oracle.get_script_class_name(a_trait))
+        return null
+
     # Check there is no cyclic dependencies in progress
     if encoutered_traits.has(a_trait):
         var cyclic_dependency_string:String = encoutered_traits \
             .map(_type_oracle.get_script_class_name) \
             .reduce(func(accum, name): return "%s -> %s" % [accum, name])
         cyclic_dependency_string = "%s -> %s" % [cyclic_dependency_string, _type_oracle.get_script_class_name(a_trait)]
-        assert(false, "⚠️ Cyclic depdendency detected during trait instantiation: %s" % cyclic_dependency_string)
+        assert(false, "⚠️ Cyclic dependency detected during trait instantiation: %s" % cyclic_dependency_string)
         return null
     # Register this trait to be encountered
     encoutered_traits.append(a_trait)
@@ -82,7 +95,6 @@ func _instantiate_trait_for_receiver(a_trait:Script, receiver:Object, encoutered
     # Look for _init method to check if it takes parameters or not
     for method in a_trait.get_script_method_list():
         if method.name == "_init":
-            print(method)
             # Find/construct required arguments
             for arg in method.args:
                 # Is it the receiver itself, or a trait ?
@@ -102,12 +114,17 @@ func _instantiate_trait_for_receiver(a_trait:Script, receiver:Object, encoutered
                         constructor_parameters.append(receiver)
                     else:
                         var needed_trait:Script = _type_oracle.get_script_from_class_name(constructor_argument_class_name)
-                        assert(is_instance_valid(needed_trait), "Trait '%s' can not be found in project." % constructor_argument_class_name)
-                        var trait_instance:Object = _instantiate_trait(needed_trait, receiver, encoutered_traits)
-                        assert(is_instance_valid(trait_instance), "Unable to instantiate trait '%s'." % constructor_argument_class_name)
-                        if not is_instance_valid(trait_instance):
+                        if not is_instance_valid(needed_trait):
+                            assert(false, "Trait '%s' can not be found in project." % constructor_argument_class_name)
                             error_encountered = true
                             break
+
+                        var trait_instance:Object = _instantiate_trait(needed_trait, receiver, encoutered_traits)
+                        if not is_instance_valid(trait_instance):
+                            assert(false, "Unable to instantiate trait '%s'." % constructor_argument_class_name)
+                            error_encountered = true
+                            break
+
                         constructor_parameters.append(trait_instance)
 
             # Ugly but efficient: there is only one _init method in a script !

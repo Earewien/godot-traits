@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://dhhvq847mnhk"]
+
+[ext_resource type="Script" path="res://addons/godot-traits/examples/not-a-trait-detection/main.gd" id="1_gfy5d"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_gfy5d")

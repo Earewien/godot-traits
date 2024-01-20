@@ -69,6 +69,10 @@ static var _trait_builder:GTraitsTraitBuilder = GTraitsTraitBuilder.new()
 # Public functions
 #------------------------------------------
 
+## Declare a class as a trait. It then becomes available for several operations on trait.
+static func register_trait(a_trait:Script) -> void:
+    _trait_builder.register_trait(a_trait)
+
 ## Returns [code]true[/code] if an object has a given trait, [code]false[/code] otherwise.
 static func is_a(a_trait:Script, object:Object) -> bool:
     if not is_instance_valid(object):

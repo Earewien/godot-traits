@@ -229,6 +229,12 @@ func _generate_gtraits_helper() -> void:
 
     # Then proceed to generation
     var indent_string:String = _get_indent_string()
+    var ordered_trait_qualified_names:Array = _traits_by_scripts.values() \
+        .map(func(traits:Dictionary): return traits.keys()) \
+        .reduce(func(accu:Array, trait_names:Array): return accu + trait_names, [])
+    ordered_trait_qualified_names.sort()
+
+    # Be predictable for trait order : do not depend on parse order
 
     var content:String = ''
     content += "# ##########################################################################\n"
@@ -242,8 +248,14 @@ func _generate_gtraits_helper() -> void:
     content += "## Auto-generated utility to handle traits in Godot.\n"
     content += "## \n"
     content += "\n"
-    content += "#region Core methods\n"
+    content += "#region Trait declaration\n\n"
+    content += "static func _static_init() -> void:\n"
+    for a_trait in ordered_trait_qualified_names:
+        content += indent_string + "GTraitsCore.register_trait(%s)\n" % a_trait
     content += "\n"
+    content += "#endregion\n"
+    content += "\n"
+    content += "#region Core methods\n\n"
     content += "## Shortcut for [method GTraitsCore.as_a]\n"
     content += "static func as_a(a_trait:Script, object:Object) -> Object:\n"
     content += indent_string + "return GTraitsCore.as_a(a_trait, object)\n"
