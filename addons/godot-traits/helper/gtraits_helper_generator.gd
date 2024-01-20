@@ -219,9 +219,13 @@ func _get_script_traits(script:Script) -> Dictionary:
 func _generate_gtraits_helper() -> void:
     # Before generating GTraits script, ensure that all references scripts are still available
     # some may have been deleted from outside Godot Editor
+    # Do it in 2 passes since it's not supported to erase values from a dictionary while iterating
+    var scripts_to_remove:PackedStringArray = []
     for script_path in _traits_by_scripts:
         if not FileAccess.file_exists(script_path):
-            _traits_by_scripts.erase(script_path)
+            scripts_to_remove.append(script_path)
+    for script_path in scripts_to_remove:
+        _traits_by_scripts.erase(script_path)
 
     # Then proceed to generation
     var indent_string:String = _get_indent_string()
