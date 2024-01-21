@@ -38,6 +38,10 @@ var _gdscript_saver:GTraitsGDScriptSaver = GTraitsGDScriptSaver.new()
 # All known traits order by script path, keys are script paths, values are dictionaries of traits
 # in those scripts, where keys are trait qualified names and values are GTraitsGDScriptParser.ClassInfo
 var _traits_by_scripts:Dictionary
+# Script paths which are script root of a scene in the project. Keys are script paths, and values are
+# arrays of scene paths since a script may be the root script of multiple scenes
+var _scene_paths_by_script_path:GTraitsHash = GTraitsHash.new()
+
 # Logger
 var _logger:GTraitsLogger = GTraitsLogger.new("gtraits_helper_gen")
 
@@ -70,8 +74,12 @@ func initialize() -> void:
         filesystem.on_scripts_changed.connect(_on_scripts_changed)
     if not filesystem.on_scripts_removed.is_connected(_on_scripts_removed):
         filesystem.on_scripts_removed.connect(_on_scripts_removed)
+    if not filesystem.on_scenes_changed.is_connected(_on_scenes_changed):
+        filesystem.on_scenes_changed.connect(_on_scenes_changed)
+    if not filesystem.on_scenes_removed.is_connected(_on_scenes_removed):
+        filesystem.on_scenes_removed.connect(_on_scenes_removed)
 
-    # Regenerate GTraits script from scratch, by scanning all file on FS !
+    _logger.info(func(): return "Generating GTraits helper on editor startup")
     _reload_scripts_traits_from_filesystem()
 
 func uninitialize() -> void:
@@ -88,6 +96,10 @@ func uninitialize() -> void:
         filesystem.on_scripts_changed.disconnect(_on_scripts_changed)
     if filesystem.on_scripts_removed.is_connected(_on_scripts_removed):
         filesystem.on_scripts_removed.disconnect(_on_scripts_removed)
+    if filesystem.on_scenes_changed.is_connected(_on_scenes_changed):
+        filesystem.on_scenes_changed.disconnect(_on_scenes_changed)
+    if filesystem.on_scenes_removed.is_connected(_on_scenes_removed):
+        filesystem.on_scenes_removed.disconnect(_on_scenes_removed)
 
     _instance = null
 
@@ -126,8 +138,8 @@ func _scan_filesystem() -> void:
         await godot_scene_tree.create_timer(0.1).timeout
 
 func _reload_scripts_traits_from_filesystem() -> void:
-    _logger.info(func(): return "Generating GTraits helper on editor startup")
     _traits_by_scripts.clear()
+    _on_scenes_changed(GTraitsFileSystem.get_instance().get_scenes())
     _on_scripts_changed(GTraitsFileSystem.get_instance().get_scripts())
 
 func _on_editor_indent_type_changed() -> void:
@@ -140,9 +152,13 @@ func _on_editor_indent_size_changed() -> void:
 
 func _on_scripts_changed(scripts:Array) -> void:
     if not scripts.is_empty():
+        var has_changes:bool = false
         for script in scripts:
-            _handle_script_changed(script, false)
-        _generate_gtraits_helper()
+            if script.script_path != GTraitsEditorSettings.get_instance().get_gtraits_helper_output_path():
+                _handle_script_changed(script, false)
+                has_changes = true
+        if has_changes:
+            _generate_gtraits_helper()
 
 func _on_scripts_removed(scripts:Array) -> void:
     var previous_known_script_count:int = _traits_by_scripts.size()
@@ -150,6 +166,35 @@ func _on_scripts_removed(scripts:Array) -> void:
         _traits_by_scripts.erase(script.script_path)
     if previous_known_script_count != _traits_by_scripts.size():
         _generate_gtraits_helper()
+
+func _on_scenes_changed(scenes:Array) -> void:
+    if not scenes.is_empty():
+        var has_changes:bool = false
+        for scene in scenes:
+            var old_scene_script_path = _scene_paths_by_script_path.get_key(scene.packed_scene_path)
+            if scene.has_script():
+                if scene.script_info.script_path != old_scene_script_path:
+                    _scene_paths_by_script_path.erase_value(scene.packed_scene_path)
+                    _scene_paths_by_script_path.put_value(scene.script_info.script_path, scene.packed_scene_path)
+                    has_changes = true
+            else:
+                if old_scene_script_path != null:
+                    _scene_paths_by_script_path.erase_value(scene.packed_scene_path)
+                    has_changes = true
+
+        if has_changes:
+            _generate_gtraits_helper()
+
+func _on_scenes_removed(scenes:Array) -> void:
+    if not scenes.is_empty():
+        var has_changes:bool = false
+        for scene in scenes:
+            var scene_script_path = _scene_paths_by_script_path.erase_value(scene.packed_scene_path)
+            if scene_script_path != null && _traits_by_scripts.has(scene_script_path):
+                has_changes = true
+
+        if has_changes:
+            _generate_gtraits_helper()
 
 func _handle_script_changed(script_info:GTraitsFileSystem.ScriptInfo, allow_generate:bool = false) -> void:
     var traits:Dictionary = _get_script_traits(script_info)
@@ -181,7 +226,7 @@ func _get_script_traits(script_info:GTraitsFileSystem.ScriptInfo) -> Dictionary:
     return traits
 
 func _generate_gtraits_helper() -> void:
-    _logger.debug(func(): return "Generating GTraits helper")
+    _logger.info(func(): return "Generating GTraits helper due to changes")
 
     # Before generating GTraits script, ensure that all references scripts are still available
     # some may have been deleted from outside Godot Editor
@@ -193,14 +238,20 @@ func _generate_gtraits_helper() -> void:
     for script_path in scripts_to_remove:
         _traits_by_scripts.erase(script_path)
 
+    # Same for scenes
+    var scenes_to_remove:PackedStringArray = []
+    for scene_path in _scene_paths_by_script_path.values():
+        if not FileAccess.file_exists(scene_path):
+            scenes_to_remove.append(scene_path)
+    for scene_path in scenes_to_remove:
+        _scene_paths_by_script_path.erase_value(scene_path)
+
     # Then proceed to generation
     var indent_string:String = _get_indent_string()
-    var ordered_trait_qualified_names:Array = _traits_by_scripts.values() \
-        .map(func(traits:Dictionary): return traits.keys()) \
-        .reduce(func(accu:Array, trait_names:Array): return accu + trait_names, [])
-    ordered_trait_qualified_names.sort()
 
-    # Be predictable for trait order : do not depend on parse order
+    # Be predictable for script content : do not depend on parse order
+    var sorted_script_paths:Array = _traits_by_scripts.keys()
+    sorted_script_paths.sort()
 
     var content:String = ''
     content += "# ##########################################################################\n"
@@ -215,9 +266,27 @@ func _generate_gtraits_helper() -> void:
     content += "## \n"
     content += "\n"
     content += "#region Trait declaration\n\n"
-    content += "static func _static_init() -> void:\n"
-    for a_trait in ordered_trait_qualified_names:
-        content += indent_string + "GTraitsCore.register_trait(%s)\n" % a_trait
+    if not _traits_by_scripts.is_empty():
+        content += "static func _static_init() -> void:\n"
+        for script_path in sorted_script_paths:
+            var traits = _traits_by_scripts[script_path]
+
+            # Be predictable for script content : do not depend on parse order
+            var sorted_trait_qualified_names:Array = traits.keys()
+            sorted_trait_qualified_names.sort()
+
+            for qualified_trait_name in sorted_trait_qualified_names:
+                var the_trait:GTraitsGDScriptParser.ClassInfo = traits[qualified_trait_name]
+                if _scene_paths_by_script_path.has_key(the_trait.script_path):
+                    var scene_paths:Array = _scene_paths_by_script_path.get_values(the_trait.script_path)
+                    if scene_paths.size() == 1:
+                        content += indent_string + "GTraitsCore.register_trait(%s) # Scene is %s\n" % [the_trait.qualified_class_name, scene_paths.front()]
+                    else:
+                        _logger.warn(func(): return "⚠️ Multiple scenes are using script trait '%s' as root script. It will not be declared as a Scene trait." % the_trait.qualified_class_name)
+                        content += indent_string + "GTraitsCore.register_trait(%s)\n" % the_trait.qualified_class_name
+                else:
+                    content += indent_string + "GTraitsCore.register_trait(%s)\n" % the_trait.qualified_class_name
+
     content += "\n"
     content += "#endregion\n"
     content += "\n"
@@ -249,10 +318,6 @@ func _generate_gtraits_helper() -> void:
     content += "#endregion\n"
     content += "\n"
     var generated_traits:PackedStringArray = []
-
-    # Be predictable for script content : do not depend on parse order
-    var sorted_script_paths:Array = _traits_by_scripts.keys()
-    sorted_script_paths.sort()
 
     for script_path in sorted_script_paths:
         var traits = _traits_by_scripts[script_path]

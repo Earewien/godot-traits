@@ -27,14 +27,17 @@ class ClassInfo:
     ## Qualified class name, [i]i.e.[/i] the named used to reference this class outside the file
     ## (with parent class names)
     var qualified_class_name: String
+    ## Path to the script declaring this class
+    var script_path:String
     ## Class annotations, keys are annotation name, value is a [ClassAnnotation]
     var annotations:Dictionary
     ## Is this class the top level class, as declared by the [code]class_name[/code] keyword
     var is_top_level:bool
 
-    func _init(name:String, top_level:bool = false, full_name:String = "", annots:Array[ClassAnnotation] = []):
+    func _init(name:String, top_level:bool = false, full_name:String = "", sp:String = "", annots:Array[ClassAnnotation] = []):
         declared_class_name = name
         qualified_class_name = full_name if full_name else name
+        script_path = sp
         for annotation in annots:
             annotations[annotation.name] = annotation
         is_top_level = top_level
@@ -109,7 +112,7 @@ func get_script_info_from_file(script_path:String) -> ScriptInfo:
 
     if FileAccess.file_exists(script_path):
         var lines:PackedStringArray = FileAccess.get_file_as_string(script_path).split("\n")
-        script_info.class_info = _parse_class_info(lines)
+        script_info.class_info = _parse_class_info(lines, script_path)
 
     return script_info
 
@@ -140,7 +143,7 @@ func _is_inner_class_declaration(line:String) -> bool:
 func _is_comment(line:String) -> bool:
     return not line.is_empty() and line[0] == "#"
 
-func _parse_class_info(lines:PackedStringArray) -> Array[ClassInfo]:
+func _parse_class_info(lines:PackedStringArray, script_path:String) -> Array[ClassInfo]:
     # The top level class, as declared by the class_name keyword. May be empty is not found
     var main_class_name: String = ""
     # Stack class info like objects into a stack, help to determine class parenting
@@ -162,7 +165,7 @@ func _parse_class_info(lines:PackedStringArray) -> Array[ClassInfo]:
         # Handle top level class declaration
         elif _is_top_level_class_declaration(trimed_line_content):
             main_class_name = trimed_line_content.split(" ")[1]
-            class_infos.append(ClassInfo.new(main_class_name, true, main_class_name, annotations_queue))
+            class_infos.append(ClassInfo.new(main_class_name, true, main_class_name, script_path, annotations_queue))
             class_stack.append({
                 "name": main_class_name,
                 "full_name": main_class_name,
@@ -181,7 +184,7 @@ func _parse_class_info(lines:PackedStringArray) -> Array[ClassInfo]:
             var parent_full_name = class_stack[-1]["full_name"] if class_stack.size() > 0 else ""
             var full_class_name = (parent_full_name + "." if parent_full_name else "") + the_class_name
 
-            class_infos.append(ClassInfo.new(the_class_name, main_class_name == full_class_name, full_class_name, annotations_queue))
+            class_infos.append(ClassInfo.new(the_class_name, main_class_name == full_class_name, full_class_name, script_path, annotations_queue))
             class_stack.append({
                 "name": the_class_name,
                 "full_name": full_class_name,

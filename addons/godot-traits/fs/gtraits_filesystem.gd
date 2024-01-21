@@ -1,4 +1,4 @@
-extends Node
+extends RefCounted
 class_name GTraitsFileSystem
 
 ##
@@ -120,12 +120,14 @@ static func get_instance() -> GTraitsFileSystem:
     return _instance
 
 ## Initialize FS when addon is starting-up
-func initialize() -> GTraitsFileSystem:
+func initialize() -> void:
     var editor_plugin:GodotTraitsEditorPlugin = GodotTraitsEditorPlugin.get_instance()
     var fs_dock:FileSystemDock = EditorInterface.get_file_system_dock()
     var editor_node:Node = EditorInterface.get_base_control().get_parent()
     if not editor_plugin.resource_saved.is_connected(_on_resource_saved):
         editor_plugin.resource_saved.connect(_on_resource_saved)
+    if not editor_plugin.scene_changed.is_connected(_on_editor_scene_changed):
+        editor_plugin.scene_changed.connect(_on_editor_scene_changed)
     if not fs_dock.file_removed.is_connected(_on_file_removed):
         fs_dock.file_removed.connect(_on_file_removed)
     if not fs_dock.files_moved.is_connected(_on_files_moved):
@@ -133,17 +135,22 @@ func initialize() -> GTraitsFileSystem:
     if not editor_node.scene_saved.is_connected(_on_scene_saved):
         editor_node.scene_saved.connect(_on_scene_saved)
 
+    var duplicate_dialog:ConfirmationDialog = get_fs_dock_duplicate_dialog()
+    if duplicate_dialog != null:
+        if not duplicate_dialog.confirmed.is_connected(_on_duplicated_file_confirmed):
+            duplicate_dialog.confirmed.connect(_on_duplicated_file_confirmed)
+
     _scan_fs_for_scenes_and_scripts()
 
-    return self
-
 ## Uninitialize FS when addon is shutting down
-func uninitialize() -> GTraitsFileSystem:
+func uninitialize() -> void:
     var editor_plugin:GodotTraitsEditorPlugin = GodotTraitsEditorPlugin.get_instance()
     var fs_dock:FileSystemDock = EditorInterface.get_file_system_dock()
     var editor_node:Node = EditorInterface.get_base_control().get_parent()
     if editor_plugin.resource_saved.is_connected(_on_resource_saved):
         editor_plugin.resource_saved.disconnect(_on_resource_saved)
+    if editor_plugin.scene_changed.is_connected(_on_editor_scene_changed):
+        editor_plugin.scene_changed.disconnect(_on_editor_scene_changed)
     if fs_dock.file_removed.is_connected(_on_file_removed):
         fs_dock.file_removed.disconnect(_on_file_removed)
     if fs_dock.files_moved.is_connected(_on_files_moved):
@@ -151,10 +158,24 @@ func uninitialize() -> GTraitsFileSystem:
     if editor_node.scene_saved.is_connected(_on_scene_saved):
         editor_node.scene_saved.disconnect(_on_scene_saved)
 
+    var duplicate_dialog:ConfirmationDialog = get_fs_dock_duplicate_dialog()
+    if duplicate_dialog != null:
+        if duplicate_dialog.confirmed.is_connected(_on_duplicated_file_confirmed):
+            duplicate_dialog.confirmed.disconnect(_on_duplicated_file_confirmed)
+
     _instance = null
 
-    return self
+## Force this utility to rescan all filesystem
+func force_full_scan() -> void:
+    _scan_fs_for_scenes_and_scripts()
 
+## Returns information about all project scenes
+func get_scenes() -> Array[PackedSceneInfo]:
+    var scenes:Array[PackedSceneInfo] = []
+    scenes.append_array(_scene_info_by_path.values())
+    return scenes
+
+## Returns information about all project scripts
 func get_scripts() -> Array[ScriptInfo]:
     var scripts:Array[ScriptInfo] = []
     scripts.append_array(_script_info_by_path.values())
@@ -164,7 +185,30 @@ func get_scripts() -> Array[ScriptInfo]:
 # Private functions
 #------------------------------------------
 
-func _on_scene_saved(scene_path:String):
+func get_fs_dock_duplicate_dialog() -> ConfirmationDialog:
+    for child in EditorInterface.get_file_system_dock().get_children():
+        if child is ConfirmationDialog:
+            if child.ok_button_text == "Duplicate":
+                return child
+
+    _logger.error(func(): return "Can not find the Duplicate dialog on the FileSystem dock. Duplicate scenes will not be handled by GTraits")
+    return null
+
+func get_fs_dick_dupliate_dialog_text() -> LineEdit:
+    var dialog:ConfirmationDialog = get_fs_dock_duplicate_dialog()
+    if dialog != null:
+        return _find_first_line_edit_in_hierarchy(dialog)
+    return null
+
+func _on_editor_scene_changed(node:Node) -> void:
+    # When creating a new scene from the dock, or duplicating it, the EditorNode scene_saved signal is not
+    # triggered. This is a workaround to be aware of those scripts since they are immediatly opened into the editor
+    if is_instance_valid(node):
+        for opened_scene_path in EditorInterface.get_open_scenes():
+            if not _scene_info_by_path.has(opened_scene_path):
+                _on_packed_scene_changed(opened_scene_path)
+
+func _on_scene_saved(scene_path:String) -> void:
      _on_packed_scene_changed(scene_path)
 
 func _on_resource_saved(resource:Resource) -> void:
@@ -187,27 +231,51 @@ func _on_files_moved(old_file_path:String, new_file_path:String) -> void:
         _on_script_removed(old_file_path)
         _on_script_changed(new_file_path)
 
+func _on_duplicated_file_confirmed() -> void:
+    var dialog_line_edit:LineEdit = get_fs_dick_dupliate_dialog_text()
+    if dialog_line_edit != null:
+        var duplicated_file_name:String = dialog_line_edit.text
+        if duplicated_file_name.length() != 0 \
+                and not duplicated_file_name.contains("/") \
+                and not duplicated_file_name.contains("\\") \
+                and not duplicated_file_name.contains(":") \
+                and not duplicated_file_name == ".":
+            var selected_paths:PackedStringArray = EditorInterface.get_selected_paths()
+            if selected_paths.size() == 1:
+                var base_dir:String = selected_paths[0].get_base_dir()
+                if base_dir.ends_with("/"):
+                    base_dir = base_dir.get_base_dir()
+                var duplicated_file_path:String = base_dir.path_join(duplicated_file_name)
+                if duplicated_file_path.get_extension() == "tscn":
+                    _on_packed_scene_changed(duplicated_file_path)
+                elif duplicated_file_path.get_extension().ends_with("gd"):
+                    _on_script_changed(duplicated_file_path)
+            else:
+                _logger.warn(func(): return "⚠️ Duplicating multiple files at the same time is not supported bu Godot Traits")
+    else:
+        _logger.error(func(): return "Can not get the duplicated file name. It will not be handled by Godot Traits")
+
 func _on_packed_scene_changed(packed_scene_path:String) -> void:
-    _logger.info(func(): return "Scene changed: '%s'" % packed_scene_path)
     var packed_scene_info:PackedSceneInfo = _register_packed_scene(packed_scene_path, true)
     if packed_scene_info != null:
+        _logger.info(func(): return "Scene changed: '%s'" % packed_scene_path)
         on_scenes_changed.emit([packed_scene_info])
 
 func _on_script_changed(script_path:String) -> void:
-    _logger.info(func(): return "Script changed: '%s'" % script_path)
     var script_info:ScriptInfo = _register_script_info(script_path, false)
     if script_info != null:
+        _logger.info(func(): return "Script changed: '%s'" % script_path)
         on_scripts_changed.emit([script_info])
 
 func _on_packed_scene_removed(packed_scene_path:String) -> void:
-    _logger.info(func(): return "Scene removed: '%s'" % packed_scene_path)
     if _scene_info_by_path.has(packed_scene_path):
+        _logger.info(func(): return "Scene removed: '%s'" % packed_scene_path)
         on_scenes_removed.emit([_scene_info_by_path[packed_scene_path]])
         _scene_info_by_path.erase(packed_scene_path)
 
 func _on_script_removed(script_path:String) -> void:
-    _logger.info(func(): return "Script removed: '%s'" % script_path)
     if _script_info_by_path.has(script_path):
+        _logger.info(func(): return "Script removed: '%s'" % script_path)
         on_scripts_removed.emit([_script_info_by_path[script_path]])
         _script_info_by_path.erase(script_path)
 
@@ -244,7 +312,7 @@ func _scan_fs_for_scenes_and_scripts() -> void:
     if not _scene_info_by_path.is_empty():
         on_scenes_changed.emit(_scene_info_by_path.values().duplicate())
     if not _script_info_by_path.is_empty():
-        on_scenes_changed.emit(_script_info_by_path.values().duplicate())
+        on_scripts_changed.emit(_script_info_by_path.values().duplicate())
 
 func _register_packed_scene(packed_scene_path:String, use_cache:bool = false) -> PackedSceneInfo:
     var scene_info:PackedSceneInfo = _build_packed_scene_info(packed_scene_path, use_cache)
@@ -319,3 +387,14 @@ func _recursive_find_files(path:String = "res://", ext:String = "") -> PackedStr
             file_paths.append(path)
 
     return file_paths
+
+func _find_first_line_edit_in_hierarchy(node:Node) -> LineEdit:
+    if node is LineEdit:
+        return node
+
+    for child in node.get_children():
+        var found_line_edit:LineEdit = _find_first_line_edit_in_hierarchy(child)
+        if found_line_edit != null:
+            return found_line_edit
+
+    return null
