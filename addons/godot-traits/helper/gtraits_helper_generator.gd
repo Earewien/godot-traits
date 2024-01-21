@@ -140,7 +140,7 @@ func _scan_filesystem() -> void:
 func _reload_scripts_traits_from_filesystem() -> void:
     _traits_by_scripts.clear()
     for script in _recursive_find_gd_scripts("res://"):
-        _handle_script_changed(script)
+        _handle_script_changed(script, false)
     _generate_gtraits_helper()
 
 func _on_editor_indent_type_changed() -> void:
@@ -186,7 +186,7 @@ func _is_script_resource_of_interest(resource:Resource) -> bool:
 
     return true
 
-func _handle_script_changed(script:Script) -> void:
+func _handle_script_changed(script:Script, allow_generate:bool = false) -> void:
     var traits:Dictionary = _get_script_traits(script)
 
     var changed:bool = false
@@ -197,7 +197,7 @@ func _handle_script_changed(script:Script) -> void:
         changed = true
         _traits_by_scripts[script.resource_path] = traits
 
-    if changed:
+    if allow_generate and changed:
         _generate_gtraits_helper()
 
 func _get_script_traits(script:Script) -> Dictionary:
@@ -433,7 +433,7 @@ func _recursive_find_gd_scripts(path:String) -> Array[Script]:
     elif FileAccess.file_exists(path):
         # A file, maybe a GDScript ?
         if path.get_extension() == "gd":
-            var loaded_file:Resource = load(path)
+            var loaded_file:Resource = ResourceLoader.load(path, "GDScript")
             if _is_script_resource_of_interest(loaded_file):
                 scripts.append(loaded_file as Script)
 
