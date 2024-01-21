@@ -98,12 +98,17 @@ class ScriptInfo:
 ## Returns complete script information
 ## See [ScriptInfo] for accessible information.
 func get_script_info(script:Script) -> ScriptInfo:
-    var script_info:ScriptInfo = ScriptInfo.new()
-    script_info.script_file_name = script.resource_name.get_file()
-    script_info.script_path = script.resource_path
+    return get_script_info_from_file(script.resource_path)
 
-    if FileAccess.file_exists(script.resource_path):
-        var lines:PackedStringArray = FileAccess.get_file_as_string(script.resource_path).split("\n")
+## Returns complete script information
+## See [ScriptInfo] for accessible information.
+func get_script_info_from_file(script_path:String) -> ScriptInfo:
+    var script_info:ScriptInfo = ScriptInfo.new()
+    script_info.script_file_name = script_path.get_file()
+    script_info.script_path = script_path
+
+    if FileAccess.file_exists(script_path):
+        var lines:PackedStringArray = FileAccess.get_file_as_string(script_path).split("\n")
         script_info.class_info = _parse_class_info(lines)
 
     return script_info

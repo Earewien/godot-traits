@@ -10,14 +10,6 @@ class_name GTraitsHelperGenerator
 # Constants
 #------------------------------------------
 
-## Root paths to exclude from resource parsing
-const _PARSE_EXCLUDED_PATHS:PackedStringArray = [
-    'res://addons/godot-traits/core',
-    'res://addons/godot-traits/documentation',
-    'res://addons/godot-traits/helper',
-    'res://addons/godot-traits/settings'
-]
-
 #------------------------------------------
 # Signals
 #------------------------------------------
@@ -46,6 +38,8 @@ var _gdscript_saver:GTraitsGDScriptSaver = GTraitsGDScriptSaver.new()
 # All known traits order by script path, keys are script paths, values are dictionaries of traits
 # in those scripts, where keys are trait qualified names and values are GTraitsGDScriptParser.ClassInfo
 var _traits_by_scripts:Dictionary
+# Logger
+var _logger:GTraitsLogger = GTraitsLogger.new("gtraits_helper_gen")
 
 #------------------------------------------
 # Godot override functions
@@ -71,14 +65,11 @@ func initialize() -> void:
     if not editor_settings.on_editor_indent_size_changed.is_connected(_on_editor_indent_size_changed):
         editor_settings.on_editor_indent_size_changed.connect(_on_editor_indent_size_changed)
 
-    var editor_plugin:GodotTraitsEditorPlugin = GodotTraitsEditorPlugin.get_instance()
-    var fs_dock:FileSystemDock = EditorInterface.get_file_system_dock()
-    if not editor_plugin.resource_saved.is_connected(_on_resource_saved):
-        editor_plugin.resource_saved.connect(_on_resource_saved)
-    if not fs_dock.resource_removed.is_connected(_on_resource_removed):
-        fs_dock.resource_removed.connect(_on_resource_removed)
-    if not fs_dock.files_moved.is_connected(_on_files_moved):
-        fs_dock.files_moved.connect(_on_files_moved)
+    var filesystem:GTraitsFileSystem = GTraitsFileSystem.get_instance()
+    if not filesystem.on_scripts_changed.is_connected(_on_scripts_changed):
+        filesystem.on_scripts_changed.connect(_on_scripts_changed)
+    if not filesystem.on_scripts_removed.is_connected(_on_scripts_removed):
+        filesystem.on_scripts_removed.connect(_on_scripts_removed)
 
     # Regenerate GTraits script from scratch, by scanning all file on FS !
     _reload_scripts_traits_from_filesystem()
@@ -92,14 +83,11 @@ func uninitialize() -> void:
     if editor_settings.on_editor_indent_size_changed.is_connected(_on_editor_indent_size_changed):
         editor_settings.on_editor_indent_size_changed.disconnect(_on_editor_indent_size_changed)
 
-    var editor_plugin:GodotTraitsEditorPlugin = GodotTraitsEditorPlugin.get_instance()
-    var fs_dock:FileSystemDock = EditorInterface.get_file_system_dock()
-    if editor_plugin.resource_saved.is_connected(_on_resource_saved):
-        editor_plugin.resource_saved.disconnect(_on_resource_saved)
-    if fs_dock.resource_removed.is_connected(_on_resource_removed):
-        fs_dock.resource_removed.disconnect(_on_resource_removed)
-    if fs_dock.files_moved.is_connected(_on_files_moved):
-        fs_dock.files_moved.disconnect(_on_files_moved)
+    var filesystem:GTraitsFileSystem = GTraitsFileSystem.get_instance()
+    if filesystem.on_scripts_changed.is_connected(_on_scripts_changed):
+        filesystem.on_scripts_changed.disconnect(_on_scripts_changed)
+    if filesystem.on_scripts_removed.is_connected(_on_scripts_removed):
+        filesystem.on_scripts_removed.disconnect(_on_scripts_removed)
 
     _instance = null
 
@@ -138,71 +126,47 @@ func _scan_filesystem() -> void:
         await godot_scene_tree.create_timer(0.1).timeout
 
 func _reload_scripts_traits_from_filesystem() -> void:
+    _logger.info(func(): return "Generating GTraits helper on editor startup")
     _traits_by_scripts.clear()
-    for script in _recursive_find_gd_scripts("res://"):
-        _handle_script_changed(script, false)
-    _generate_gtraits_helper()
+    _on_scripts_changed(GTraitsFileSystem.get_instance().get_scripts())
 
 func _on_editor_indent_type_changed() -> void:
+    _logger.info(func(): return "Generating GTraits helper on editor setting indent type changed")
     _generate_gtraits_helper()
 
 func _on_editor_indent_size_changed() -> void:
+    _logger.info(func(): return "Generating GTraits helper on editor setting indent size changed")
     _generate_gtraits_helper()
 
-func _on_resource_saved(resource:Resource) -> void:
-    if _is_script_resource_of_interest(resource):
-        _handle_script_changed(resource)
-
-func _on_resource_removed(resource:Resource) -> void:
-    if _traits_by_scripts.has(resource.resource_path):
-        _traits_by_scripts.erase(resource.resource_path)
+func _on_scripts_changed(scripts:Array) -> void:
+    if not scripts.is_empty():
+        for script in scripts:
+            _handle_script_changed(script, false)
         _generate_gtraits_helper()
 
-func _on_files_moved(old_file_path:String, new_file_path:String) -> void:
-    var changed:bool = false
+func _on_scripts_removed(scripts:Array) -> void:
+    var previous_known_script_count:int = _traits_by_scripts.size()
+    for script in scripts:
+        _traits_by_scripts.erase(script.script_path)
+    if previous_known_script_count != _traits_by_scripts.size():
+        _generate_gtraits_helper()
 
-    if _traits_by_scripts.has(old_file_path):
-        changed = true
-        _traits_by_scripts.erase(old_file_path)
-        _scan_filesystem()
-
-    if new_file_path.get_extension() == "gd":
-        var loaded_file:Resource = ResourceLoader.load(new_file_path, "", ResourceLoader.CACHE_MODE_REPLACE)
-        if _is_script_resource_of_interest(loaded_file):
-            changed = true
-            _handle_script_changed(loaded_file)
-            _generate_gtraits_helper()
-
-func _is_script_resource_of_interest(resource:Resource) -> bool:
-    if not resource is GDScript:
-        return false
-
-    if resource.resource_path == _gtraits_script_path:
-        return false
-
-    for excluded_path in _PARSE_EXCLUDED_PATHS:
-        if resource.resource_path.begins_with(excluded_path):
-            return false
-
-    return true
-
-func _handle_script_changed(script:Script, allow_generate:bool = false) -> void:
-    var traits:Dictionary = _get_script_traits(script)
+func _handle_script_changed(script_info:GTraitsFileSystem.ScriptInfo, allow_generate:bool = false) -> void:
+    var traits:Dictionary = _get_script_traits(script_info)
 
     var changed:bool = false
-    if traits.is_empty() and _traits_by_scripts.has(script.resource_path):
-        _traits_by_scripts.erase(script.resource_path)
+    if traits.is_empty() and _traits_by_scripts.has(script_info.script_path):
+        _traits_by_scripts.erase(script_info.script_path)
         changed = true
     elif not traits.is_empty():
         changed = true
-        _traits_by_scripts[script.resource_path] = traits
+        _traits_by_scripts[script_info.script_path] = traits
 
     if allow_generate and changed:
         _generate_gtraits_helper()
 
-func _get_script_traits(script:Script) -> Dictionary:
+func _get_script_traits(script_info:GTraitsFileSystem.ScriptInfo) -> Dictionary:
     var traits:Dictionary = { }
-    var script_info:GTraitsGDScriptParser.ScriptInfo = _gdscript_parser.get_script_info(script)
     for class_info in script_info.class_info:
         if class_info.annotations.has("trait"):
             traits[class_info.qualified_class_name] = class_info
@@ -211,12 +175,14 @@ func _get_script_traits(script:Script) -> Dictionary:
     # Those traits will not have helper methods
     if not traits.is_empty() and not script_info.has_top_level_class():
         traits.clear()
-        printerr("⚠️ Script '%s' does not have a top level class (declared by class_name keyword) but\
+        _logger.warn(func(): return "⚠️ Script '%s' does not have a top level class (declared by class_name keyword) but \
             contains traits. As a consequence, hey will not be available outside this script. (in script '%s')" % [script_info.script_file_name, script_info.script_path])
 
     return traits
 
 func _generate_gtraits_helper() -> void:
+    _logger.debug(func(): return "Generating GTraits helper")
+
     # Before generating GTraits script, ensure that all references scripts are still available
     # some may have been deleted from outside Godot Editor
     # Do it in 2 passes since it's not supported to erase values from a dictionary while iterating
@@ -301,7 +267,7 @@ func _generate_gtraits_helper() -> void:
             var trait_full_name:String = the_trait.qualified_class_name
             var trait_name_alias:String = the_trait.annotations['trait'].options['alias'] if the_trait.annotations['trait'].options.has("alias") else ''
             if not trait_name_alias.is_empty() and generated_traits.has(trait_name_alias):
-                printerr("⚠️ Trait '%s' can not use alias '%s' since another trait already uses this name or this alias. It's original name will be used. (in script '%s')" % [trait_full_name, trait_name_alias, script_path])
+                _logger.warn(func(): return "⚠️ Trait '%s' can not use alias '%s' since another trait already uses this name or this alias. It's original name will be used. (in script '%s')" % [trait_full_name, trait_name_alias, script_path])
                 trait_name_alias = ''
 
             var snaked_trait_full_name = trait_full_name.replace('.', '').to_snake_case()
@@ -404,7 +370,9 @@ func _generate_gtraits_helper() -> void:
 
             generated_traits.append(trait_name_alias if not trait_name_alias.is_empty() else trait_full_name)
 
-    _gdscript_saver.save(GTraitsEditorSettings.get_instance().get_gtraits_helper_output_path(), content)
+    var output_path:String = GTraitsEditorSettings.get_instance().get_gtraits_helper_output_path()
+    _gdscript_saver.save(output_path, content)
+    _logger.debug(func(): return "   GTraits helper generated in %s" % output_path)
 
 func _get_indent_string() -> String:
     var indent_type:GTraitsEditorSettings.IndentType = GTraitsEditorSettings.get_instance().get_editor_indent_type()
@@ -413,28 +381,6 @@ func _get_indent_string() -> String:
     elif indent_type == GTraitsEditorSettings.IndentType.SPACES:
         return " ".repeat(GTraitsEditorSettings.get_instance().get_editor_indent_size())
     else:
-        printerr("⚠️ Unknown indent type '%s'" % [GTraitsEditorSettings.IndentType.keys()[indent_type]])
+        _logger.error(func(): return "⚠️ Unknown indent type '%s'" % [GTraitsEditorSettings.IndentType.keys()[indent_type]])
         return ""
 
-func _recursive_find_gd_scripts(path:String) -> Array[Script]:
-    # Since resource path is a key to identify resource, make sur each path is canonical !
-    path = path.simplify_path()
-    var scripts:Array[Script] = []
-
-    # Recursive search in directory
-    if DirAccess.dir_exists_absolute(path):
-        var res_dir:DirAccess = DirAccess.open(path)
-        res_dir.list_dir_begin()
-        var file_name = res_dir.get_next()
-        while file_name != "":
-            scripts.append_array(_recursive_find_gd_scripts(path.path_join(file_name)))
-            file_name = res_dir.get_next()
-    # Path represents a file !
-    elif FileAccess.file_exists(path):
-        # A file, maybe a GDScript ?
-        if path.get_extension() == "gd":
-            var loaded_file:Resource = ResourceLoader.load(path, "GDScript")
-            if _is_script_resource_of_interest(loaded_file):
-                scripts.append(loaded_file as Script)
-
-    return scripts

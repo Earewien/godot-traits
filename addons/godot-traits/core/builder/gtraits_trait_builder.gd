@@ -30,6 +30,9 @@ var _known_traits:Dictionary
 var _traits_storage:GTraitsStorage = GTraitsStorage.new()
 var _type_oracle:GTraitsTypeOracle = GTraitsTypeOracle.new()
 
+# Logger
+var _logger:GTraitsLogger = GTraitsLogger.new("gtraits_trait_build")
+
 #------------------------------------------
 # Godot override functions
 #------------------------------------------
@@ -103,7 +106,7 @@ func _instantiate_trait_for_receiver(a_trait:Script, receiver:Object, encoutered
                     # Argument is not strongly typed. Just pass the receiver itself as parameter
                     # Hope for the best !
                     if receiver_object_already_injected:
-                        printerr("⚠️ Injecting at least twice the trait receiver into trait '%s' constructor" % _traits_storage.get_trait_class_name(a_trait))
+                        _logger.warn(func(): return "⚠️ Injecting at least twice the trait receiver into trait '%s' constructor" % _traits_storage.get_trait_class_name(a_trait))
                     receiver_object_already_injected = true
                     constructor_parameters.append(receiver)
                 else:
