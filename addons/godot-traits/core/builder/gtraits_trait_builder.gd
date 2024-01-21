@@ -26,6 +26,7 @@ class_name GTraitsTraitBuilder
 #------------------------------------------
 
 # All known traits, for dep injection. As a dictionary to check trait in o(1)
+## Key is the trait script, value is the path to the trait scene if there is one
 var _known_traits:Dictionary
 var _traits_storage:GTraitsStorage = GTraitsStorage.new()
 var _type_oracle:GTraitsTypeOracle = GTraitsTypeOracle.new()
@@ -41,9 +42,10 @@ var _logger:GTraitsLogger = GTraitsLogger.new("gtraits_trait_build")
 # Public functions
 #------------------------------------------
 
-## Declare a class as a trait, making it available for dependency injection
-func register_trait(a_trait:Script) -> void:
-    _known_traits[a_trait] = true
+## Declare a class as a trait, making it available for dependency injection. If the scene path is not empty,
+## the given scene will be instantiated instead of the given script when a trait instance will be needed
+func register_trait(a_trait:Script, scene_path:String = "") -> void:
+    _known_traits[a_trait] = scene_path
 
 ## Retuns the trait for the given receiver. If the trait already exists, it is just returned. Otherwise,
 ## it is instantiated, registered into the receiver and returned.
@@ -56,7 +58,7 @@ func instantiate_trait(a_trait:Script, receiver:Object) -> Object:
 
 func _instantiate_trait(a_trait:Script, receiver:Object, encoutered_traits:Array[Script] = []) -> Object:
     # Check if this is an actual trait
-    if not _known_traits.get(a_trait, false):
+    if not _known_traits.has(a_trait):
         assert(false, "Type '%s' is not a trait and can not be automatically instantiated" % _type_oracle.get_script_class_name(a_trait))
         return null
 
@@ -138,7 +140,13 @@ func _instantiate_trait_for_receiver(a_trait:Script, receiver:Object, encoutered
         return null
 
     # Instantiate trait and save it into the receiver trait instances storage
-    var trait_instance:Object = a_trait.new.callv(constructor_parameters)
+    # Check if trait is a Scene trait or a Script trait, to instantiate the scene itself or only the script
+    var trait_instance:Object
+    var trait_scene_path:String = _known_traits.get(a_trait)
+    if trait_scene_path.is_empty():
+        trait_instance = a_trait.new.callv(constructor_parameters)
+    else:
+        trait_instance = ResourceLoader.load(trait_scene_path, "PackedScene").instantiate.callv(constructor_parameters)
     _traits_storage.store_trait_instance(receiver, trait_instance)
 
     # If trait has parent classes, to prevent to create new trait instance if parent classes are asked for this

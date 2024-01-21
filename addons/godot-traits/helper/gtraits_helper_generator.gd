@@ -280,7 +280,7 @@ func _generate_gtraits_helper() -> void:
                 if _scene_paths_by_script_path.has_key(the_trait.script_path):
                     var scene_paths:Array = _scene_paths_by_script_path.get_values(the_trait.script_path)
                     if scene_paths.size() == 1:
-                        content += indent_string + "GTraitsCore.register_trait(%s) # Scene is %s\n" % [the_trait.qualified_class_name, scene_paths.front()]
+                        content += indent_string + "GTraitsCore.register_trait(%s, \"%s\")\n" % [the_trait.qualified_class_name, scene_paths.front()]
                     else:
                         _logger.warn(func(): return "⚠️ Multiple scenes are using script trait '%s' as root script. It will not be declared as a Scene trait." % the_trait.qualified_class_name)
                         content += indent_string + "GTraitsCore.register_trait(%s)\n" % the_trait.qualified_class_name

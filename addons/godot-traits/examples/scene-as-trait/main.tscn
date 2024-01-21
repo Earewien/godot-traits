@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3 uid="uid://dijvmarxdk2hc"]
+
+[ext_resource type="Script" path="res://addons/godot-traits/examples/scene-as-trait/main.gd" id="1_4r4hv"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_4r4hv")
+
+[node name="Heart" type="Polygon2D" parent="."]
+modulate = Color(0.807843, 0.203922, 0.156863, 1)
+position = Vector2(535, 288)
+polygon = PackedVector2Array(0, 16, -13, 0, -16, -9, -7, -16, 0, -9, 7, -16, 16, -9, 13, 0)

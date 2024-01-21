@@ -92,6 +92,10 @@ func store_trait_instance(object:Object, trait_instance:Object, as_trait:Script 
         as_trait = trait_instance.get_script()
     object.set_meta(_get_trait_instance_meta_name(as_trait), trait_instance)
 
+    # If both receiver and trait are Node instance, also add trait as a child of the receiver
+    if trait_instance is Node and object is Node:
+        (object as Node).add_child(trait_instance, true, Node.INTERNAL_MODE_DISABLED)
+
 ## Remove a trait from an object.
 ## [br][br]
 ## Trait instance is not accessible anymore from it's trait type, or super and sub types.
@@ -109,6 +113,10 @@ func remove_trait(a_trait:Script, object:Object) -> void:
     for trait_to_remove in traits_to_remove:
         object_traits.erase(trait_to_remove)
         object.remove_meta(_get_trait_instance_meta_name(trait_to_remove))
+
+    # If both receiver and trait are Node instance, also remove trait from receiver children
+    if trait_instance is Node and object is Node:
+        (object as Node).remove_child(trait_instance)
 
     # Free trait instance
     _free_trait_instance(trait_instance)

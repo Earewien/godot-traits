@@ -70,8 +70,11 @@ static var _trait_builder:GTraitsTraitBuilder = GTraitsTraitBuilder.new()
 #------------------------------------------
 
 ## Declare a class as a trait. It then becomes available for several operations on trait.
-static func register_trait(a_trait:Script) -> void:
-    _trait_builder.register_trait(a_trait)
+## [br][br]
+## If the [code]scene_path[/code] is not empty, the trait is registered as a [i]Scene trait[/i]. When
+## used, the scene will be instantiated instead of the trait script.
+static func register_trait(a_trait:Script, scene_path:String = "") -> void:
+    _trait_builder.register_trait(a_trait, scene_path)
 
 ## Returns [code]true[/code] if an object has a given trait, [code]false[/code] otherwise.
 static func is_a(a_trait:Script, object:Object) -> bool:
