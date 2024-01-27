@@ -20,12 +20,23 @@ Given that Godot Engine lacks an official interface system, many developers reso
 - [x] Generation of an helper script to provide strong typed features and code completion in editor
 - [ ] Inline traits into scripts by using the `@inline_trait(TheTraitName)` annotation
 - [x] Helper methods to invoke code if object _is a [something]_ or else invoke a _fallback method_
-
+- [ ] Trait instantiation optimization (keep trait instantiation info in memory for future usage)
+- [ ] When removing a trait, also remove its dependencies if not used by other object traits
+ 
 ## 📄 Examples
 
 Many usage examples are available in `addons/godot-traits/examples` folders. Each example has its proper `README` file explaining the example concept.
 
 ## 📄 Features
+
+| __In-editor__                                              	                                                             | __Runtime__                                	                                         |
+|----------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
+| 🔑 [Trait declaration using annotation](#-trait-declaration-using-annotation)                     	                    | 🔑 [Trait instance automatic lifecycle](#-trait-instance-automatic-lifecycle)         |
+| 🔑 [Auto-generated trait helper class to manipulate traits](#-auto-generated-trait-helper-class-to-manipulate-traits)     | 🔑 [Scene as trait](#-scene-as-trait)                                                 |
+| 🔑 [Strongly-typed traits and autocompletion](#-strongly-typed-traits-and-autocompletion)               	                | 🔑 [Dynamic addition and removal of traits](#-dynamic-addition-and-removal-of-traits) |
+|                                                                                                                            | 🔑 [Automatic trait dependencies injection](#-automatic-trait-dependencies-injection) |
+|                                                                                                                            | 🔑 [Traits inheritance](#-traits-inheritance)                                         |
+|                                                                                                                            | 🔑 [Strong trait usage runtime checks](#-strong-trait-usage-runtime-checks)           |
 
 ### ➡️ In-editor features
 
@@ -216,6 +227,84 @@ _Examples of code completion and code navigation facilitated by the static typin
 
 ### ➡️ Runtime features
 
+#### 🔑 Trait instance automatic lifecycle
+
+##### Instantiation
+
+_Godot Traits_ will automatically apply operations on instantiated traits depending on their type. 
+
+- For _object_ traits (traits that extend `Object` or `RefCounted`), no special applied operation is performed,
+- For _node_ traits (traits that extend `Node` or any sub-classes of `Node`), trait instances are automatically added as _child of the receiver_. The trait instance is added as an _internal node_, so it's not possible to retrieve it unless specifying the `include_internal` parameter in retrieval functions.
+
+##### Removal
+
+_Godot Traits_ will automatically free trait instance upon removal
+- For _object_ traits (traits that extend `Object`), the `free` function is immediatly called,
+- For _ref counted_ traits (traits that extend `RefCounted`), no function is called since those objects are automatically garbage collected,
+- For _node_ traits (traits that extend `Node` or any sub-classes of `Node`), the `queue_free` function is called immediatly.
+
+###### 📜 Trait instance automatic lifecycle rules
+
+- ⚠️ _Godot Traits limitation_: when removing a trait from an object, only the trait instance itself is removed and freed from memory. Trait dependencies are still declared in the object. They should be removed manually, if needed. See [Roadmap](#%EF%B8%8F-roadmap) for more information.
+
+#### 🔑 Scene as trait
+
+As _Godot_ is a _node-oriented_ game engine, it is typical to share behavioral components using scenes, such as a hitbox, animations, or a movement controller. With _Godot Traits_, developers can create intricate traits that extend beyond simple scripts and encompass entire scenes. Any scene with its _root script_ (the script attached to the root node of the scene) defined as a trait is identified as a _scene trait_ and can be utilized just like any other traits.
+
+![image](addons/godot-traits/documentation/assets/gtraits_self_destructible_scene.png)
+
+
+```gdscript
+#####
+# File sef_destructible.gd
+#####
+
+# @trait
+class_name SelfDestructible
+extends Node2D
+
+signal after_destruction
+
+@onready var _explosion_particules: CPUParticles2D = $ExplosionParticules
+@onready var _self_desctruct_timer: Timer = $SelfDestructTimer
+
+var _receiver
+var _logger:Loggable
+
+func _initialize(receiver, logger: Loggable) -> void:
+    _receiver = receiver
+    _logger = logger
+
+func _on_self_desctruct_timer_timeout() -> void:
+    _explosion_particules.emitting = true
+    get_tree().create_tween().tween_property(_receiver, "modulate:a", 0, _self_desctruct_timer.wait_time / 2)
+
+func _on_explosion_particules_finished() -> void:
+    after_destruction.emit()
+```
+
+```gdscript
+#####
+# File main.gd
+#####
+
+extends Node2D
+
+@onready var _heart: Polygon2D = $Heart
+
+func _ready() -> void:
+    GTraits.set_self_destructible(_heart) \
+        .after_destruction.connect(func(): _heart.queue_free())
+```
+
+Take note of the usage of the `_initialize` function in the self-destructible trait. This method is recognized by _Godot Traits_ and is automatically invoked after the instantiation of a scene trait to execute dependency injection. The `_init` function in _Godot_ cannot be utilized for dependency injection in scene traits as it cannot accept any arguments.
+
+###### 📜 Scene as trait rules
+
+- `_init` and `_initialize` functions can coexist within a scene trait, provided that the `_init` function does not take any arguments. In the event that it does, an assertion error will be triggered.
+
+![image](addons/godot-traits/documentation/assets/gtraits_scene_trait_init_param_exception.png)
+
 #### 🔑 Strong trait usage runtime checks
 
 As developers, we often make strong assumptions about the objects we have, such as the type of node we expect in a callback (_it's always a car!_ for example). However, how can we ensure that we receive what we intended to receive? Most callback methods simply return objects of type `Node`. _Duck typing_ has its limitations when it comes to debugging your application (_if my object has the `kill` method, then call it, but what happens if it does not have the `kill` method? No error!_).
@@ -365,6 +454,8 @@ func _init() -> void:
 
 ![image](addons/godot-traits/documentation/assets/gtraits_not_a_trait_error.png)
 
+- The _auto-instantiation_ works with the _init_ function for basic traits. In _scene traits_, the `_init` function can not take arguments. To overcome this issue, _Godot Traits_ will look for the `_initialize` function for such traits. See [Scene as trait](#-scene-as-trait) section for more details
+ 
 - Default arguments in trait constructors are not considered. 
 
 

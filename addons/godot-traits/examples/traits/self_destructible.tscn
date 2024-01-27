@@ -1,0 +1,37 @@
+[gd_scene load_steps=3 format=3 uid="uid://eddvhrjay5l5"]
+
+[ext_resource type="Script" path="res://addons/godot-traits/examples/traits/self_destructible.gd" id="1_41hmq"]
+
+[sub_resource type="Gradient" id="Gradient_l37ep"]
+offsets = PackedFloat32Array(0, 0.125402, 0.572347, 0.919614, 1)
+colors = PackedColorArray(0.977964, 0.249561, 0.258935, 1, 0.670478, 0.289333, 0.0843869, 1, 0.732771, 0.399613, 0.0431947, 1, 0.720039, 0.202302, 0.207495, 1, 0, 0, 0, 0.54902)
+
+[node name="SelfDestructible" type="Node2D"]
+script = ExtResource("1_41hmq")
+
+[node name="ExplosionParticules" type="CPUParticles2D" parent="."]
+emitting = false
+amount = 32
+lifetime = 1.3
+one_shot = true
+explosiveness = 0.93
+randomness = 0.2
+lifetime_randomness = 0.3
+emission_shape = 1
+emission_sphere_radius = 15.0
+spread = 180.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 100.0
+initial_velocity_max = 100.0
+angular_velocity_max = 300.0
+angle_max = 360.0
+scale_amount_max = 3.0
+color_ramp = SubResource("Gradient_l37ep")
+
+[node name="SelfDestructTimer" type="Timer" parent="."]
+wait_time = 3.0
+one_shot = true
+autostart = true
+
+[connection signal="finished" from="ExplosionParticules" to="." method="_on_explosion_particules_finished"]
+[connection signal="timeout" from="SelfDestructTimer" to="." method="_on_self_desctruct_timer_timeout"]

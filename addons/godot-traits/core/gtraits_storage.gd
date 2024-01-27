@@ -43,8 +43,6 @@ const META_TRAIT_INSTANCE_SUFFIX:String = "__"
 # Private variables
 #------------------------------------------
 
-var _type_oracle:GTraitsTypeOracle = GTraitsTypeOracle.new()
-
 #------------------------------------------
 # Godot override functions
 #------------------------------------------
@@ -92,6 +90,10 @@ func store_trait_instance(object:Object, trait_instance:Object, as_trait:Script 
         as_trait = trait_instance.get_script()
     object.set_meta(_get_trait_instance_meta_name(as_trait), trait_instance)
 
+    # If both receiver and trait are Node instance, also add trait as a child of the receiver
+    if trait_instance is Node and object is Node:
+        (object as Node).add_child(trait_instance, true, Node.INTERNAL_MODE_BACK)
+
 ## Remove a trait from an object.
 ## [br][br]
 ## Trait instance is not accessible anymore from it's trait type, or super and sub types.
@@ -103,12 +105,16 @@ func remove_trait(a_trait:Script, object:Object) -> void:
     # First, collect all trait that can be associated to the given trait : super classes and sub classes.
     # All must be removed from the object
     var object_traits:Array[Script] = get_traits(object)
-    var traits_to_remove:Array[Script] = _type_oracle.filter_super_script_types_and_sub_script_types_of(object_traits, a_trait)
+    var traits_to_remove:Array[Script] = GTraitsTypeOracle.get_instance().filter_super_script_types_and_sub_script_types_of(object_traits, a_trait)
 
     # Remove all traits from object, remove trait instance
     for trait_to_remove in traits_to_remove:
         object_traits.erase(trait_to_remove)
         object.remove_meta(_get_trait_instance_meta_name(trait_to_remove))
+
+    # If both receiver and trait are Node instance, also remove trait from receiver children
+    if trait_instance is Node and object is Node:
+        (object as Node).remove_child(trait_instance)
 
     # Free trait instance
     _free_trait_instance(trait_instance)
@@ -122,7 +128,7 @@ func _get_trait_instance_meta_name(a_trait:Script) -> String:
 
 func _get_trait_class_name(a_trait:Script) -> String:
     if not a_trait.has_meta(META_TRAIT_CLASS_NAME):
-        var trait_class_name:String = _type_oracle.get_script_class_name(a_trait)
+        var trait_class_name:String = GTraitsTypeOracle.get_instance().get_script_class_name(a_trait)
         if trait_class_name.is_empty():
             trait_class_name = "script_%s" % str(a_trait.get_instance_id()).replace('-', '_')
         #assert(not trait_class_name.is_empty(), "Can not determine class name for trait '%s'" % a_trait.resource_path)
@@ -131,9 +137,9 @@ func _get_trait_class_name(a_trait:Script) -> String:
     return a_trait.get_meta(META_TRAIT_CLASS_NAME)
 
 func _free_trait_instance(trait_instance:Object) -> void:
-    if _type_oracle.is_object_instance_of("Node", trait_instance):
+    if GTraitsTypeOracle.get_instance().is_object_instance_of("Node", trait_instance):
         trait_instance.queue_free()
-    elif _type_oracle.is_object_instance_of("RefCounted", trait_instance):
+    elif GTraitsTypeOracle.get_instance().is_object_instance_of("RefCounted", trait_instance):
         # Do nothing, will be garbage collected by Godot Engine
         pass
     else:
