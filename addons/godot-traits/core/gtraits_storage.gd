@@ -92,7 +92,7 @@ func store_trait_instance(object:Object, trait_instance:Object, as_trait:Script 
 
     # If both receiver and trait are Node instance, also add trait as a child of the receiver
     if trait_instance is Node and object is Node:
-        (object as Node).add_child(trait_instance, true, Node.INTERNAL_MODE_DISABLED)
+        (object as Node).add_child(trait_instance, true, Node.INTERNAL_MODE_BACK)
 
 ## Remove a trait from an object.
 ## [br][br]
