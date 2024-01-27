@@ -29,14 +29,14 @@ Many usage examples are available in `addons/godot-traits/examples` folders. Eac
 
 ## 📄 Features
 
-| __In-editor__                                              	                                                             | __Runtime__                                	                                            |
-|----------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| 🔑 [Trait declaration using annotation](#🔑-trait-declaration-using-annotation)                     	                    | 🔑 [Trait instance automatic lifecycle](#🔑-trait-instance-automatic-lifecycle)         |
-| 🔑 [Auto-generated trait helper class to manipulate traits](#🔑-auto-generated-trait-helper-class-to-manipulate-traits) 	| 🔑 [Scene as trait](#🔑-scene-as-trait)                                                 |
-| 🔑 [Strongly-typed traits and autocompletion](#🔑-strongly-typed-traits-and-autocompletion)               	            | 🔑 [Dynamic addition and removal of traits](#🔑-dynamic-addition-and-removal-of-traits) |
-|                                                        	                                                                 | 🔑 [Automatic trait dependencies injection](#🔑-automatic-trait-dependencies-injection) |
-|                                                        	                                                                 | 🔑 [Traits inheritance](#🔑-traits-inheritance)                                         |
-|                                                        	                                                                 | 🔑 [Strong trait usage runtime checks](#🔑-strong-trait-usage-runtime-checks)           |
+| __In-editor__                                              	                                                             | __Runtime__                                	                                         |
+|----------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
+| 🔑 [Trait declaration using annotation](#-trait-declaration-using-annotation)                     	                    | 🔑 [Trait instance automatic lifecycle](#-trait-instance-automatic-lifecycle)         |
+| 🔑 [Auto-generated trait helper class to manipulate traits](#-auto-generated-trait-helper-class-to-manipulate-traits)     | 🔑 [Scene as trait](#-scene-as-trait)                                                 |
+| 🔑 [Strongly-typed traits and autocompletion](#-strongly-typed-traits-and-autocompletion)               	                | 🔑 [Dynamic addition and removal of traits](#-dynamic-addition-and-removal-of-traits) |
+|                                                                                                                            | 🔑 [Automatic trait dependencies injection](#-automatic-trait-dependencies-injection) |
+|                                                                                                                            | 🔑 [Traits inheritance](#-traits-inheritance)                                         |
+|                                                                                                                            | 🔑 [Strong trait usage runtime checks](#-strong-trait-usage-runtime-checks)           |
 
 ### ➡️ In-editor features
 
@@ -245,7 +245,7 @@ _Godot Traits_ will automatically free trait instance upon removal
 
 ###### 📜 Trait instance automatic lifecycle rules
 
-- ⚠️ _Godot Traits limitation_: when removing a trait from an object, only the trait instance itself is removed and freed from memory. Trait dependencies are still declared in the object. They should be removed manually, if needed. See [Roadmap](#🗺️-roadmap) for more information.
+- ⚠️ _Godot Traits limitation_: when removing a trait from an object, only the trait instance itself is removed and freed from memory. Trait dependencies are still declared in the object. They should be removed manually, if needed. See [Roadmap](#-roadmap) for more information.
 
 #### 🔑 Scene as trait
 
@@ -454,7 +454,7 @@ func _init() -> void:
 
 ![image](addons/godot-traits/documentation/assets/gtraits_not_a_trait_error.png)
 
-- The _auto-instantiation_ works with the _init_ function for basic traits. In _scene traits_, the `_init` function can not take arguments. To overcome this issue, _Godot Traits_ will look for the `_initialize` function for such traits. See [Scene as trait](#🔑-scene-as-trait) section for more details
+- The _auto-instantiation_ works with the _init_ function for basic traits. In _scene traits_, the `_init` function can not take arguments. To overcome this issue, _Godot Traits_ will look for the `_initialize` function for such traits. See [Scene as trait](#-scene-as-trait) section for more details
  
 - Default arguments in trait constructors are not considered. 
 
