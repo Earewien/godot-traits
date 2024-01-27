@@ -26,6 +26,9 @@ class_name GTraitsTypeOracle
 # Private variables
 #------------------------------------------
 
+# Singleton
+static var _instance:GTraitsTypeOracle
+
 #------------------------------------------
 # Godot override functions
 #------------------------------------------
@@ -33,6 +36,12 @@ class_name GTraitsTypeOracle
 #------------------------------------------
 # Public functions
 #------------------------------------------
+
+## Returns the [GTraitsTypeOracle] singleton
+static func get_instance() -> GTraitsTypeOracle:
+    if _instance == null:
+        _instance = GTraitsTypeOracle.new()
+    return _instance
 
 ## Returns the class name of a [Script], as defined by the [code]class_name[/code] keyword.
 ## If class name if not found, returns an empty [String].
