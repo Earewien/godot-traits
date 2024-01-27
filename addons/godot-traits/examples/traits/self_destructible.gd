@@ -32,7 +32,7 @@ signal after_destruction
 #------------------------------------------
 
 @onready var _explosion_particules: CPUParticles2D = $ExplosionParticules
-@onready var _self_desctruct_timer: Timer = $SelfDesctructTimer
+@onready var _self_desctruct_timer: Timer = $SelfDestructTimer
 
 # The trait receiver
 var _receiver
