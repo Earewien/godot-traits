@@ -245,7 +245,7 @@ _Godot Traits_ will automatically free trait instance upon removal
 
 ###### 📜 Trait instance automatic lifecycle rules
 
-- ⚠️ _Godot Traits limitation_: when removing a trait from an object, only the trait instance itself is removed and freed from memory. Trait dependencies are still declared in the object. They should be removed manually, if needed. See [Roadmap](#-roadmap) for more information.
+- ⚠️ _Godot Traits limitation_: when removing a trait from an object, only the trait instance itself is removed and freed from memory. Trait dependencies are still declared in the object. They should be removed manually, if needed. See [Roadmap](#%EF%B8%8F-roadmap) for more information.
 
 #### 🔑 Scene as trait
 
