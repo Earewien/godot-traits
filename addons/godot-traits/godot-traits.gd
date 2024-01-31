@@ -44,7 +44,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
             if event.is_released():
                 _regenerate_gtraits_script()
 
-func _regenerate_gtraits_script():
+func _regenerate_gtraits_script() -> void:
     GTraitsFileSystem.get_instance().force_full_scan()
     GTraitsHelperGenerator.get_instance().clear_and_regenerate()
     _logger.info(func(): return "🎭 Godot Traits: GTraits script regenerated in '%s'" % GTraitsEditorSettings.get_instance().get_gtraits_helper_output_path())
