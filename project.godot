@@ -13,6 +13,10 @@ config_version=5
 config/name="Godot-Traits"
 config/features=PackedStringArray("4.2", "GL Compatibility")
 
+[autoload]
+
+GTraits="*res://gtraits/helper/gtraits.gd"
+
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/godot-traits/plugin.cfg", "res://addons/script-ide/plugin.cfg")

@@ -28,11 +28,8 @@ class_name GTraitsTraitBuilder
 # Singleton
 static var _instance
 
-# All known traits, for dep injection. As a dictionary to check trait in o(1)
-## Key is the trait script, value is the path to the trait scene if there is one
-var _known_traits:Dictionary
+# To store and retrieve traits from/into receiver
 var _traits_storage:GTraitsStorage = GTraitsStorage.new()
-
 # Logger
 var _logger:GTraitsLogger = GTraitsLogger.new("gtraits_trait_build")
 
@@ -50,11 +47,6 @@ static func get_instance() -> GTraitsTraitBuilder:
         _instance = GTraitsTraitBuilder.new()
     return _instance
 
-## Declare a class as a trait, making it available for dependency injection. If the scene path is not empty,
-## the given scene will be instantiated instead of the given script when a trait instance will be needed
-func register_trait(a_trait:Script, scene_path:String = "") -> void:
-    _known_traits[a_trait] = scene_path
-
 ## Retuns the trait for the given receiver. If the trait already exists, it is just returned. Otherwise,
 ## it is instantiated, registered into the receiver and returned.
 func instantiate_trait(a_trait:Script, receiver:Object) -> Object:
@@ -66,7 +58,7 @@ func instantiate_trait(a_trait:Script, receiver:Object) -> Object:
 
 func _instantiate_trait(a_trait:Script, receiver:Object, encoutered_traits:Array[Script] = []) -> Object:
     # Check if this is an actual trait
-    if not _known_traits.has(a_trait):
+    if not GTraitsTraitRegistry.get_instance().is_trait(a_trait):
         assert(false, "⚠️ Type '%s' is not a trait and can not be automatically instantiated" % GTraitsTypeOracle.get_instance().get_script_class_name(a_trait))
         return null
 
@@ -105,7 +97,6 @@ func _instantiate_trait_for_receiver(a_trait:Script, receiver:Object, encoutered
     # Tells if there was a fatal error during trait instantiation
     var error_encountered:bool = false
 
-    var trait_scene_path:String = _known_traits.get(a_trait)
     var initializers:Dictionary = _extract_initialization_method_prototypes(a_trait)
     # There are multiple possibilities here:
     # - there is only one initializer, the _init method, with or without args: it's okay, only if this trait
@@ -114,7 +105,7 @@ func _instantiate_trait_for_receiver(a_trait:Script, receiver:Object, encoutered
     # - there are 2 initializers: it's okay if the _init one do not take any arguments
     var init_initializer:TraitInitializerPrototype = initializers.get("_init", null)
     var initialize_initializer:TraitInitializerPrototype = initializers.get("_initialize", null)
-    if not trait_scene_path.is_empty() and init_initializer != null and init_initializer.has_parameters():
+    if GTraitsTraitRegistry.get_instance().is_scene_trait(a_trait) and init_initializer != null and init_initializer.has_parameters():
         assert(false, "⚠️ Scene trait can not declare parameters in their _init function (in trait '%s'). Use the _initialize function instead." % _traits_storage.get_trait_class_name(a_trait))
         return null
     if init_initializer != null and initialize_initializer != null and init_initializer.has_parameters() and initialize_initializer.has_parameters():
@@ -131,20 +122,16 @@ func _instantiate_trait_for_receiver(a_trait:Script, receiver:Object, encoutered
     for arg_type in arg_types:
         var arg:Object = arg_type.get_parameter_instance(receiver, encoutered_traits)
         if arg == null:
-            error_encountered = true
-            break
+             # Something went wrong, can not instantiate objects...
+            return null
         constructor_parameters.append(arg)
-
-    # Something went wrong, can not instantiate objects...
-    if error_encountered:
-        return null
 
     # Instantiate trait and save it into the receiver trait instances storage
     # Check if trait is a Scene trait or a Script trait, to instantiate the scene itself or only the script
     var trait_instance:Object
 
     # Script trait
-    if trait_scene_path.is_empty():
+    if not GTraitsTraitRegistry.get_instance().is_scene_trait(a_trait):
         # First instantiate using the new. if the _init initializer exists with parameters, inject them
         if init_initializer != null and init_initializer.has_parameters():
             trait_instance = a_trait.new.callv(constructor_parameters)
@@ -152,6 +139,7 @@ func _instantiate_trait_for_receiver(a_trait:Script, receiver:Object, encoutered
             trait_instance = a_trait.new()
     # Scene trait
     else:
+        var trait_scene_path:String = GTraitsTraitRegistry.get_instance().get_scene_trait_scene_path(a_trait)
         trait_instance = ResourceLoader.load(trait_scene_path, "PackedScene").instantiate()
 
     # Then, if there exists an _initialize initializer, call it (with parameters if needed)

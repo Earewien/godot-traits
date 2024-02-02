@@ -128,6 +128,7 @@ func _on_trait_invoker_path_changed() -> void:
         gtrait_script.resource_path = _gtraits_script_path
         DirAccess.make_dir_recursive_absolute(_gtraits_script_path.get_base_dir())
         ResourceSaver.save(gtrait_script, gtrait_script.resource_path)
+        GTraitsProjectSettings.get_instance().update_gtraits_autoload()
     else:
         _generate_gtraits_helper()
 
@@ -258,9 +259,12 @@ func _generate_gtraits_helper() -> void:
     content += "# ##########################################################################\n"
     content += "# This file is auto generated and should ne be edited !\n"
     content += "# It can safely be committed to your VCS.\n"
+    content += "# This script is automatically declared as singleton in your\n"
+    content += "# Project Settings. Do not remove it or disable it or GTraits will not\n"
+    content += "# work as expected\n"
     content += "# ##########################################################################\n"
     content += "\n"
-    content += "class_name GTraits\n"
+    content += "extends Node\n"
     content += "\n"
     content += "## \n"
     content += "## Auto-generated utility to handle traits in Godot.\n"
@@ -438,6 +442,7 @@ func _generate_gtraits_helper() -> void:
 
     var output_path:String = GTraitsEditorSettings.get_instance().get_gtraits_helper_output_path()
     _gdscript_saver.save(output_path, content)
+    GTraitsProjectSettings.get_instance().update_gtraits_autoload()
     _logger.debug(func(): return "   GTraits helper generated in %s" % output_path)
 
 func _get_indent_string() -> String:
