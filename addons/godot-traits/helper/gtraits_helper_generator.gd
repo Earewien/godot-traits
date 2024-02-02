@@ -126,6 +126,7 @@ func _on_trait_invoker_path_changed() -> void:
 
         # Now, FS has been scanned, so it's safe to save the script at its new location
         gtrait_script.resource_path = _gtraits_script_path
+        DirAccess.make_dir_recursive_absolute(_gtraits_script_path.get_base_dir())
         ResourceSaver.save(gtrait_script, gtrait_script.resource_path)
     else:
         _generate_gtraits_helper()
