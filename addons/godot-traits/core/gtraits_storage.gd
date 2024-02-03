@@ -15,10 +15,6 @@ class_name GTraitsStorage
 ## Meta object is an [Array] of [Script]
 const META_TRAIT_SCRIPTS:String = "__traits__"
 
-## Meta key that stores the trait class name (the defined class_name) in a trait script
-## Meta object is a [String]
-const META_TRAIT_CLASS_NAME:String = "__trait_name_"
-
 ## Meta key prefix that stores the instantiated trait into an object.
 ## Meta object is an [Object]
 const META_TRAIT_INSTANCE_PREFIX:String = "__trait_"
@@ -51,11 +47,6 @@ const META_TRAIT_INSTANCE_SUFFIX:String = "__"
 # Public functions
 #------------------------------------------
 
-## Returns the trait class name, as defined in the trait script through the [code]class_name[/code]
-## keyword. Raise an assertion error if class name can not be determined.
-func get_trait_class_name(a_trait:Script) -> String:
-    return _get_trait_class_name(a_trait)
-
 ## Returns an [Array] of [Script] correspondinf to all object traits.
 func get_traits(object:Object) -> Array[Script]:
      # First, ensure that the traits storage is available
@@ -73,11 +64,11 @@ func get_trait_instance(object:Object, a_trait:Script, fail_if_not_found:bool = 
     var trait_instance_meta_name:String = _get_trait_instance_meta_name(a_trait)
     if object.has_meta(trait_instance_meta_name):
         var traint_instance:Object = object.get_meta(trait_instance_meta_name)
-        assert(!fail_if_not_found || is_instance_valid(traint_instance), "Instance of trait '%s' not found or not valid" % _get_trait_class_name(a_trait))
+        assert(!fail_if_not_found || is_instance_valid(traint_instance), "Instance of trait '%s' not found or not valid" % GTraitsTypeOracle.get_instance().get_trait_info(a_trait).trait_name)
         return traint_instance
     else:
         if fail_if_not_found:
-            assert(false, "Instance of trait '%s' not found" % _get_trait_class_name(a_trait))
+            assert(false, "Instance of trait '%s' not found" % GTraitsTypeOracle.get_instance().get_trait_info(a_trait).trait_name)
         return null
 
 ## Stores the trait instance of the object.
@@ -100,7 +91,7 @@ func store_trait_instance(object:Object, trait_instance:Object, as_trait:Script 
 ## It is also automatically freed.
 func remove_trait(a_trait:Script, object:Object) -> void:
     var trait_instance:Object = get_trait_instance(object, a_trait)
-    assert(trait_instance != null, "Instance of trait '%s' not found" % _get_trait_class_name(a_trait))
+    assert(trait_instance != null, "Instance of trait '%s' not found" % GTraitsTypeOracle.get_instance().get_trait_info(a_trait).trait_name)
 
     # First, collect all trait that can be associated to the given trait : super classes and sub classes.
     # All must be removed from the object
@@ -124,17 +115,7 @@ func remove_trait(a_trait:Script, object:Object) -> void:
 #------------------------------------------
 
 func _get_trait_instance_meta_name(a_trait:Script) -> String:
-    return META_TRAIT_INSTANCE_PREFIX + _get_trait_class_name(a_trait) + META_TRAIT_INSTANCE_SUFFIX
-
-func _get_trait_class_name(a_trait:Script) -> String:
-    if not a_trait.has_meta(META_TRAIT_CLASS_NAME):
-        var trait_class_name:String = GTraitsTypeOracle.get_instance().get_script_class_name(a_trait)
-        if trait_class_name.is_empty():
-            trait_class_name = "script_%s" % str(a_trait.get_instance_id()).replace('-', '_')
-        #assert(not trait_class_name.is_empty(), "Can not determine class name for trait '%s'" % a_trait.resource_path)
-        a_trait.set_meta(META_TRAIT_CLASS_NAME, trait_class_name)
-
-    return a_trait.get_meta(META_TRAIT_CLASS_NAME)
+    return META_TRAIT_INSTANCE_PREFIX + GTraitsTypeOracle.get_instance().get_trait_info(a_trait).trait_name + META_TRAIT_INSTANCE_SUFFIX
 
 func _free_trait_instance(trait_instance:Object) -> void:
     if GTraitsTypeOracle.get_instance().is_object_instance_of("Node", trait_instance):

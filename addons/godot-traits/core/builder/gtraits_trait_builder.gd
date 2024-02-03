@@ -26,7 +26,7 @@ class_name GTraitsTraitBuilder
 #------------------------------------------
 
 # Singleton
-static var _instance
+static var _instance:GTraitsTraitBuilder
 
 # To store and retrieve traits from/into receiver
 var _traits_storage:GTraitsStorage = GTraitsStorage.new()
@@ -41,7 +41,7 @@ var _logger:GTraitsLogger = GTraitsLogger.new("gtraits_trait_build")
 # Public functions
 #------------------------------------------
 
-## Returns the [GTraitsTypeOracle] singleton
+## Returns the [GTraitsTraitBuilder] singleton
 static func get_instance() -> GTraitsTraitBuilder:
     if _instance == null:
         _instance = GTraitsTraitBuilder.new()
@@ -58,16 +58,16 @@ func instantiate_trait(a_trait:Script, receiver:Object) -> Object:
 
 func _instantiate_trait(a_trait:Script, receiver:Object, encoutered_traits:Array[Script] = []) -> Object:
     # Check if this is an actual trait
-    if not GTraitsTraitRegistry.get_instance().is_trait(a_trait):
+    if not GTraitsTypeOracle.get_instance().is_trait(a_trait):
         assert(false, "⚠️ Type '%s' is not a trait and can not be automatically instantiated" % GTraitsTypeOracle.get_instance().get_script_class_name(a_trait))
         return null
 
     # Check there is no cyclic dependencies in progress
     if encoutered_traits.has(a_trait):
         var cyclic_dependency_string:String = encoutered_traits \
-            .map(GTraitsTypeOracle.get_instance().get_script_class_name) \
+            .map(func(sc): return GTraitsTypeOracle.get_instance().get_trait_info(sc).trait_name) \
             .reduce(func(accum, name): return "%s -> %s" % [accum, name])
-        cyclic_dependency_string = "%s -> %s" % [cyclic_dependency_string, GTraitsTypeOracle.get_instance().get_script_class_name(a_trait)]
+        cyclic_dependency_string = "%s -> %s" % [cyclic_dependency_string,GTraitsTypeOracle.get_instance().get_trait_info(a_trait).trait_name]
         assert(false, "⚠️ Cyclic dependency detected during trait instantiation: %s" % cyclic_dependency_string)
         return null
     # Register this trait to be encountered
@@ -84,7 +84,9 @@ func _instantiate_trait(a_trait:Script, receiver:Object, encoutered_traits:Array
     return trait_instance
 
 func _instantiate_trait_for_receiver(a_trait:Script, receiver:Object, encoutered_traits:Array[Script]) -> Object:
-    assert(a_trait.can_instantiate(), "⚠️ Trait '%s' can not be instantiated" % _traits_storage.get_trait_class_name(a_trait))
+    var trait_info:GTraitsTypeOracle.TraitInfo = GTraitsTypeOracle.get_instance().get_trait_info(a_trait)
+    assert(trait_info != null, "Should never occur !")
+    assert(a_trait.can_instantiate(), "⚠️ Trait '%s' can not be instantiated" % trait_info.trait_name)
 
     # Trait constructor ('_init' method) can take 0 or multiple parameters.
     # If it takes parameters, it can either be:
@@ -105,11 +107,11 @@ func _instantiate_trait_for_receiver(a_trait:Script, receiver:Object, encoutered
     # - there are 2 initializers: it's okay if the _init one do not take any arguments
     var init_initializer:TraitInitializerPrototype = initializers.get("_init", null)
     var initialize_initializer:TraitInitializerPrototype = initializers.get("_initialize", null)
-    if GTraitsTraitRegistry.get_instance().is_scene_trait(a_trait) and init_initializer != null and init_initializer.has_parameters():
-        assert(false, "⚠️ Scene trait can not declare parameters in their _init function (in trait '%s'). Use the _initialize function instead." % _traits_storage.get_trait_class_name(a_trait))
+    if trait_info.is_scene_trait() and init_initializer != null and init_initializer.has_parameters():
+        assert(false, "⚠️ Scene trait can not declare parameters in their _init function (in trait '%s'). Use the _initialize function instead." % trait_info.trait_name)
         return null
     if init_initializer != null and initialize_initializer != null and init_initializer.has_parameters() and initialize_initializer.has_parameters():
-        assert(false, "⚠️ Both _init and _initialize functions are declared with parameters in trait '%s'. Can no instantiate trait." % _traits_storage.get_trait_class_name(a_trait))
+        assert(false, "⚠️ Both _init and _initialize functions are declared with parameters in trait '%s'. Can no instantiate trait." % trait_info.trait_name)
         return null
 
     var arg_types:Array[TraitInitializerInitParameter]
@@ -131,7 +133,7 @@ func _instantiate_trait_for_receiver(a_trait:Script, receiver:Object, encoutered
     var trait_instance:Object
 
     # Script trait
-    if not GTraitsTraitRegistry.get_instance().is_scene_trait(a_trait):
+    if not trait_info.is_scene_trait():
         # First instantiate using the new. if the _init initializer exists with parameters, inject them
         if init_initializer != null and init_initializer.has_parameters():
             trait_instance = a_trait.new.callv(constructor_parameters)
@@ -139,8 +141,7 @@ func _instantiate_trait_for_receiver(a_trait:Script, receiver:Object, encoutered
             trait_instance = a_trait.new()
     # Scene trait
     else:
-        var trait_scene_path:String = GTraitsTraitRegistry.get_instance().get_scene_trait_scene_path(a_trait)
-        trait_instance = ResourceLoader.load(trait_scene_path, "PackedScene").instantiate()
+        trait_instance = ResourceLoader.load(trait_info.trait_scene_path, "PackedScene").instantiate()
 
     # Then, if there exists an _initialize initializer, call it (with parameters if needed)
     if initialize_initializer != null:
@@ -180,7 +181,7 @@ func _extract_initialization_method_prototypes(a_trait:Script) -> Dictionary:
                     # Argument is not strongly typed. Just pass the receiver itself as parameter
                     # Hope for the best !
                     if receiver_object_already_injected:
-                        _logger.warn(func(): return "⚠️ Injecting at least twice the trait receiver into trait '%s' constructor" % _traits_storage.get_trait_class_name(a_trait))
+                        _logger.warn(func(): return "⚠️ Injecting at least twice the trait receiver into trait '%s' constructor" % GTraitsTypeOracle.get_instance().get_trait_info(a_trait).trait_name)
                     receiver_object_already_injected = true
                     initializer.arg_types.append(TraitInitializerAnyInitParameter.new())
                 else:
