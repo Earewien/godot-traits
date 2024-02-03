@@ -99,7 +99,7 @@ static func add_trait_to(a_trait:Script, object:Object) -> Object:
     else:
         # Register trait into object, and instantiate it
         object_traits.push_back(a_trait)
-        trait_instance = GTraitsTraitBuilder.get_instance().instantiate_trait(a_trait, object, [])
+        trait_instance = GTraitsTraitBuilder.new().instantiate_trait(a_trait, object)
 
     return trait_instance
 

@@ -26,11 +26,10 @@ class_name GTraitsTraitBuilder
 # Private variables
 #------------------------------------------
 
-# Singleton
-static var _instance:GTraitsTraitBuilder
-
 # To store and retrieve traits from/into receiver
 var _traits_storage:GTraitsStorage = GTraitsStorage.new()
+# All traits encountered during trait instantiation. For cyclic dependencies detection
+var _encoutered_traits:Array[Script]
 # Logger
 var _logger:GTraitsLogger = GTraitsLogger.new("gtraits_trait_build")
 
@@ -42,49 +41,43 @@ var _logger:GTraitsLogger = GTraitsLogger.new("gtraits_trait_build")
 # Public functions
 #------------------------------------------
 
-## Returns the [GTraitsTraitBuilder] singleton
-static func get_instance() -> GTraitsTraitBuilder:
-    if _instance == null:
-        _instance = GTraitsTraitBuilder.new()
-    return _instance
-
 ## Retuns the trait for the given receiver. If the trait already exists, it is just returned. Otherwise,
 ## it is instantiated, registered into the receiver and returned.
-func instantiate_trait(a_trait:Script, receiver:Object, encoutered_traits:Array[Script]) -> Object:
-    return _instantiate_trait(a_trait, receiver, encoutered_traits)
+func instantiate_trait(a_trait:Script, receiver:Object) -> Object:
+    return _instantiate_trait(a_trait, receiver)
 
 #------------------------------------------
 # Private functions
 #------------------------------------------
 
-func _instantiate_trait(a_trait:Script, receiver:Object, encoutered_traits:Array[Script]) -> Object:
+func _instantiate_trait(a_trait:Script, receiver:Object) -> Object:
     # Check if this is an actual trait
     if not GTraitsTypeOracle.get_instance().is_trait(a_trait):
         assert(false, "⚠️ Type '%s' is not a trait and can not be automatically instantiated" % GTraitsTypeOracle.get_instance().get_script_class_name(a_trait))
         return null
 
     # Check there is no cyclic dependencies in progress
-    if encoutered_traits.has(a_trait):
-        var cyclic_dependency_string:String = encoutered_traits \
+    if _encoutered_traits.has(a_trait):
+        var cyclic_dependency_string:String = _encoutered_traits \
             .map(func(sc): return GTraitsTypeOracle.get_instance().get_trait_info(sc).trait_name) \
             .reduce(func(accum, name): return "%s -> %s" % [accum, name])
         cyclic_dependency_string = "%s -> %s" % [cyclic_dependency_string,GTraitsTypeOracle.get_instance().get_trait_info(a_trait).trait_name]
         assert(false, "⚠️ Cyclic dependency detected during trait instantiation: %s" % cyclic_dependency_string)
         return null
     # Register this trait to be encountered
-    encoutered_traits.append(a_trait)
+    _encoutered_traits.append(a_trait)
 
     # If receiver already has the given trait, return it immediatly, else try to instantiate it
     var trait_instance:Object = _traits_storage.get_trait_instance(receiver, a_trait)
     if not is_instance_valid(trait_instance):
-        trait_instance = _instantiate_trait_for_receiver(a_trait, receiver, encoutered_traits)
+        trait_instance = _instantiate_trait_for_receiver(a_trait, receiver)
 
     # This trait has been handled, so we can pop it out
-    encoutered_traits.pop_back()
+    _encoutered_traits.pop_back()
 
     return trait_instance
 
-func _instantiate_trait_for_receiver(a_trait:Script, receiver:Object, encoutered_traits:Array[Script]) -> Object:
+func _instantiate_trait_for_receiver(a_trait:Script, receiver:Object) -> Object:
     var trait_info:GTraitsTypeOracle.TraitInfo = GTraitsTypeOracle.get_instance().get_trait_info(a_trait)
     assert(trait_info != null, "Should never occur !")
     assert(a_trait.can_instantiate(), "⚠️ Trait '%s' can not be instantiated" % trait_info.trait_name)
@@ -104,8 +97,8 @@ func _instantiate_trait_for_receiver(a_trait:Script, receiver:Object, encoutered
         return null
 
     # Instantiate trait and save it into the receiver trait instances storage
-    var trait_instance:Object = init_initializer.invoke(receiver, null, encoutered_traits)
-    trait_instance = initialize_initializer.invoke(receiver, trait_instance, encoutered_traits)
+    var trait_instance:Object = init_initializer.invoke(self, receiver, null)
+    trait_instance = initialize_initializer.invoke(self, receiver, trait_instance)
     _traits_storage.store_trait_instance(receiver, trait_instance, a_trait)
 
     # If trait has parent classes, to prevent to create new trait instance if parent classes are asked for this

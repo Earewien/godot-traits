@@ -9,12 +9,12 @@ class_name GTraitsTraitInitializer
 ## Initializer parameter
 class Parameter extends RefCounted:
     ## Get an instance of the desired parameter
-    func get_parameter_instance(receiver:Object, encoutered_traits:Array[Script]) -> Object:
+    func get_parameter_instance(builder:GTraitsTraitBuilder, receiver:Object) -> Object:
         assert(false, "This method should be overridden")
         return null
 
 class AnyParameter extends Parameter:
-    func get_parameter_instance(receiver:Object, encoutered_traits:Array[Script]) -> Object:
+    func get_parameter_instance(builder:GTraitsTraitBuilder, receiver:Object) -> Object:
         return receiver
 
 class TypedParameter extends Parameter:
@@ -25,7 +25,7 @@ class TypedParameter extends Parameter:
         param_type_name = ptn
         param_type = pt
 
-    func get_parameter_instance(receiver:Object, encoutered_traits:Array[Script]) -> Object:
+    func get_parameter_instance(builder:GTraitsTraitBuilder, receiver:Object) -> Object:
         # Two possibilities :
         # - parameter is an instance of the receiver itself : the receiver is the expected parameter
         # - else, parameter is an instance of a trait, so try to get it or instantiate it
@@ -36,7 +36,7 @@ class TypedParameter extends Parameter:
                 assert(false, "⚠️ Trait '%s' can not be found in project." % param_type_name)
                 return null
 
-            var trait_instance:Object = GTraitsTraitBuilder.get_instance().instantiate_trait(param_type, receiver, encoutered_traits)
+            var trait_instance:Object = builder.instantiate_trait(param_type, receiver)
             if not is_instance_valid(trait_instance):
                 assert(false, "⚠️ Unable to instantiate trait '%s'." % param_type_name)
                 return null
@@ -93,12 +93,11 @@ func has_parameters() -> bool:
 func has_no_parameters() -> bool:
     return parameter_types.is_empty()
 
-## Invokes this initializer, and returns an initialized trait instance. Trait instance parameter can be
-## [code]null[/code], meaning it's
-func invoke(receiver:Object, trait_instance:Object, encoutered_traits:Array[Script]) -> Object:
+## Invokes this initializer, and returns an initialized trait instance.
+func invoke(builder:GTraitsTraitBuilder, receiver:Object, trait_instance:Object) -> Object:
     var parameter_instances:Array[Object] = []
     for param_type in parameter_types:
-        var param_instance:Object = param_type.get_parameter_instance(receiver, encoutered_traits)
+        var param_instance:Object = param_type.get_parameter_instance(builder, receiver)
         if param_instance == null:
              # Something went wrong, can not instantiate objects...
             return null
