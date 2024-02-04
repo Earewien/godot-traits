@@ -58,8 +58,6 @@ class_name GTraitsCore
 # Private variables
 #------------------------------------------
 
-static var _traits_storage:GTraitsStorage = GTraitsStorage.new()
-
 #------------------------------------------
 # Godot override functions
 #------------------------------------------
@@ -79,7 +77,7 @@ static func register_trait(a_trait:Script, a_trait_name:String, scene_path:Strin
 static func is_a(a_trait:Script, object:Object) -> bool:
     if not is_instance_valid(object):
         return false
-    return is_instance_valid(_traits_storage.get_trait_instance(object, a_trait))
+    return is_instance_valid(GTraitsStorage.get_instance().get_trait_instance(object, a_trait))
 
 ## Add a trait to the given object and returns the instantiated trait. If trait already exists in
 ## the object, it is immediatly returned.
@@ -92,10 +90,10 @@ static func add_trait_to(a_trait:Script, object:Object) -> Object:
     # already instantiated trait
     # - trait does not exist: instantiate it, add it to the object
     var trait_instance:Object
-    var object_traits:Array[Script] = _traits_storage.get_traits(object)
+    var object_traits:Array[Script] = GTraitsStorage.get_instance().get_traits(object)
     if object_traits.has(a_trait):
         # If object already has the trait, instance must be present ! If not, there is an issue
-        trait_instance = _traits_storage.get_trait_instance(object, a_trait, true)
+        trait_instance = GTraitsStorage.get_instance().get_trait_instance(object, a_trait, true)
     else:
         # Register trait into object, and instantiate it
         object_traits.push_back(a_trait)
@@ -106,12 +104,12 @@ static func add_trait_to(a_trait:Script, object:Object) -> Object:
 ## Remove a trait from the given object and returns it. Removed trait is automatically freed from memory.
 ## If trait is not available in the given object, an assertion error will be raised.
 static func remove_trait_from(a_trait:Script, object:Object) -> void:
-    _traits_storage.remove_trait(a_trait, object)
+    GTraitsStorage.get_instance().remove_trait(a_trait, object)
 
 ## Returns the trait instance for the given object. If this object does not have this trait,
 ## an assertion error will be raised.
 static func as_a(a_trait:Script, object:Object) -> Object:
-    return _traits_storage.get_trait_instance(object, a_trait, true)
+    return GTraitsStorage.get_instance().get_trait_instance(object, a_trait, true)
 
 ## Calls the given [Callable] if and only if an object has a given trait. The callable
 ## takes the asked trait as argument. Returns the callable result if the object has the
@@ -122,7 +120,7 @@ static func as_a(a_trait:Script, object:Object) -> Object:
 ## [br][br]
 ## See [method GTraitsCore.is_a] for more details about trait testing.
 static func if_is_a(a_trait:Script, object:Object, if_callable:Callable, deferred_call:bool = false) -> Variant:
-    var trait_instance:Object = _traits_storage.get_trait_instance(object, a_trait)
+    var trait_instance:Object = GTraitsStorage.get_instance().get_trait_instance(object, a_trait)
     if trait_instance != null:
         assert(if_callable.is_valid(), "Callable must be valid")
         if deferred_call:
@@ -141,7 +139,7 @@ static func if_is_a(a_trait:Script, object:Object, if_callable:Callable, deferre
 ## [br][br]
 ## See [method GTraitsCore.is_a] for more details about trait testing.
 static func if_is_a_or_else(a_trait:Script, object:Object, if_callable:Callable, else_callable:Callable, deferred_call:bool = false) -> Variant:
-    var trait_instance:Object = _traits_storage.get_trait_instance(object, a_trait)
+    var trait_instance:Object = GTraitsStorage.get_instance().get_trait_instance(object, a_trait)
     if trait_instance != null:
         assert(if_callable.is_valid(), "Callable must be valid")
         if deferred_call:

@@ -2,7 +2,7 @@ extends RefCounted
 class_name GTraitsHash
 
 ##
-## 'One to many' dictionary for [GTraits].
+## 'One to many' dictionary for [i]Godot Traits[/i].
 ## [br][br]
 ## Each key is associated to many values, and each value to one and only one key.
 ##

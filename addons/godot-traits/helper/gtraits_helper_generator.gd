@@ -2,7 +2,7 @@ extends RefCounted
 class_name GTraitsHelperGenerator
 
 ##
-## [GTraits] helper generator.
+## [i]Godot Traits[/i] helper generator.
 ##
 ## [color=red]This is an internal API.[/color]
 
@@ -29,7 +29,7 @@ class_name GTraitsHelperGenerator
 # Singleton
 static var _instance:GTraitsHelperGenerator
 
-# Path to generated [GTraits] script
+# Path to generated [code]GTraits[/code] autoload script
 var _gtraits_script_path:String
 # Parser to get script information
 var _gdscript_parser:GTraitsGDScriptParser = GTraitsGDScriptParser.new()
@@ -103,7 +103,7 @@ func uninitialize() -> void:
 
     _instance = null
 
-## Force [GTraits] script regeneration by rescanning all script in [code]res://[/code] folder.
+## Force [code]GTraits[/code] autoload script regeneration by rescanning all script in [code]res://[/code] folder.
 func clear_and_regenerate() -> void:
     _reload_scripts_traits_from_filesystem()
 

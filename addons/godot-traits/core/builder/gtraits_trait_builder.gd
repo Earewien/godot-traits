@@ -2,7 +2,7 @@ extends RefCounted
 class_name GTraitsTraitBuilder
 
 ##
-## Trait builder for [GTraits].
+## Trait builder for [i]Godot Traits[/i].
 ##
 ## [color=red]This is an internal API.[/color]
 
@@ -26,8 +26,6 @@ class_name GTraitsTraitBuilder
 # Private variables
 #------------------------------------------
 
-# To store and retrieve traits from/into receiver
-var _traits_storage:GTraitsStorage = GTraitsStorage.new()
 # All traits encountered during trait instantiation. For cyclic dependencies detection
 var _encoutered_traits:Array[Script]
 # Logger
@@ -68,7 +66,7 @@ func _instantiate_trait(a_trait:Script, receiver:Object) -> Object:
     _encoutered_traits.append(a_trait)
 
     # If receiver already has the given trait, return it immediatly, else try to instantiate it
-    var trait_instance:Object = _traits_storage.get_trait_instance(receiver, a_trait)
+    var trait_instance:Object = GTraitsStorage.get_instance().get_trait_instance(receiver, a_trait)
     if not is_instance_valid(trait_instance):
         trait_instance = _instantiate_trait_for_receiver(a_trait, receiver)
 
@@ -97,17 +95,19 @@ func _instantiate_trait_for_receiver(a_trait:Script, receiver:Object) -> Object:
         return null
 
     # Instantiate trait and save it into the receiver trait instances storage
+    var trait_storage:GTraitsStorage = GTraitsStorage.get_instance()
     var trait_instance:Object = init_initializer.invoke(self, receiver, null)
     trait_instance = initialize_initializer.invoke(self, receiver, trait_instance)
-    _traits_storage.store_trait_instance(receiver, trait_instance, a_trait)
+    trait_storage.store_trait_instance(receiver, trait_instance, a_trait)
 
     # If trait has parent classes, to prevent to create new trait instance if parent classes are asked for this
     # receiver, register this trait instance has the one to be returned when a parent class is asked (POO style)
     var parent_script:Script = a_trait.get_base_script()
     while(parent_script != null):
-        _traits_storage.store_trait_instance(receiver, trait_instance, parent_script)
+        trait_storage.store_trait_instance(receiver, trait_instance, parent_script)
         parent_script = parent_script.get_base_script()
 
+    # Store trait into a container, if needed
+    trait_storage.add_trait_to_container(receiver, trait_instance)
+
     return trait_instance
-
-

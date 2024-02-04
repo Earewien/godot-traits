@@ -2,7 +2,7 @@ extends RefCounted
 class_name GTraitsTraitInitializerRegistry
 
 ##
-## Trait initializer method registry for [GTraits].
+## Trait initializer method registry for [i]Godot Traits[/i].
 ##
 ## [color=red]This is an internal API.[/color]
 

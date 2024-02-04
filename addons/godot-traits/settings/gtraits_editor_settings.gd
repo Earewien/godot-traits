@@ -42,7 +42,7 @@ var _SETTINGS_HELPER_SHORTCUT_INFOS:Dictionary = {
 # Signals
 #------------------------------------------
 
-## Emited when the path to the [GTraits] script has changed
+## Emited when the path to the [code]GTraits[/code] autoload script has changed
 signal on_trait_invoker_path_changed()
 ## Emitedwhen the editor indentation type has changed
 signal on_editor_indent_type_changed()

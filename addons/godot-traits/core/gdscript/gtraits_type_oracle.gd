@@ -2,7 +2,7 @@ extends RefCounted
 class_name GTraitsTypeOracle
 
 ##
-## Type Oracle [GTraits].
+## Type Oracle for [i]Godot Traits[/i].
 ##
 ## [color=red]This is an internal API.[/color]
 

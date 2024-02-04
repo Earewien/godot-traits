@@ -2,7 +2,7 @@ extends RefCounted
 class_name GTraitsLogger
 
 ##
-## Logging utility [GTraits].
+## Logging utility for [i]Godot Traits[/i].
 ##
 ## [color=red]This is an internal API.[/color]
 

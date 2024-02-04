@@ -2,7 +2,7 @@ extends RefCounted
 class_name GTraitsTraitInitializer
 
 ##
-## Trait initializer [GTraits].
+## Trait initializer [i]Godot Traits[/i].
 ##
 ## [color=red]This is an internal API.[/color]
 
@@ -95,6 +95,14 @@ func has_no_parameters() -> bool:
 
 ## Invokes this initializer, and returns an initialized trait instance.
 func invoke(builder:GTraitsTraitBuilder, receiver:Object, trait_instance:Object) -> Object:
+    # Before invoking, if trait instance is not null and _initialize is the initializer, check that the instance
+    # has not been already initialized. Can occurs when using GTraitsContainer, we can't know if the child is added
+    # from the editor (need to be initialized) or is added through GTraitsCore
+    if name == "_initialize" and trait_instance != null:
+        if trait_instance.get_meta("__trait_initialized__", false):
+            return trait_instance
+
+    # Proceed to initialization
     var parameter_instances:Array[Object] = []
     for param_type in parameter_types:
         var param_instance:Object = param_type.get_parameter_instance(builder, receiver)
@@ -118,6 +126,9 @@ func invoke(builder:GTraitsTraitBuilder, receiver:Object, trait_instance:Object)
             return null
         if exists:
             trait_instance._initialize.callv(parameter_instances)
+        # Tag this trait instance as initialized: to avoid multiple initialization in the future
+        trait_instance.set_meta("__trait_initialized__", true)
+
         return trait_instance
 
 #------------------------------------------

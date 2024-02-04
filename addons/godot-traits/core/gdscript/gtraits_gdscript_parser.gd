@@ -2,7 +2,7 @@ extends RefCounted
 class_name GTraitsGDScriptParser
 
 ##
-## GDScript light parser for [GTraits].
+## GDScript light parser for [i]Godot Traits[/i].
 ##
 ## [color=red]This is an internal API.[/color]
 

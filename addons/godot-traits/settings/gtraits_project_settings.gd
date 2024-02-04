@@ -46,7 +46,7 @@ static func get_instance() -> GTraitsProjectSettings:
         _instance = GTraitsProjectSettings.new()
     return _instance
 
-## Declare or update [GTraits] autoload in Project Settings
+## Declare or update [code]GTraits[/code] autoload autoload in Project Settings
 func update_gtraits_autoload() -> void:
     # The star '*' means Autoload enabled"
     var autoload_path:String = "*%s" % GTraitsEditorSettings.get_instance().get_gtraits_helper_output_path()
