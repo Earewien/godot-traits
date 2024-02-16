@@ -75,9 +75,6 @@ func initialize() -> void:
     if not filesystem.on_scenes_and_scripts_removed.is_connected(_on_scene_and_scripts_removed):
         filesystem.on_scenes_and_scripts_removed.connect(_on_scene_and_scripts_removed)
 
-    _logger.info(func(): return "Generating GTraits helper on editor startup")
-    _reload_scripts_traits_from_filesystem()
-
 func uninitialize() -> void:
     var editor_settings:GTraitsEditorSettings = GTraitsEditorSettings.get_instance()
     if editor_settings.on_trait_invoker_path_changed.is_connected(_on_trait_invoker_path_changed):

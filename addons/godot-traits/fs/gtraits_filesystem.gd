@@ -135,7 +135,7 @@ func initialize() -> void:
         if not duplicate_dialog.confirmed.is_connected(_on_duplicated_file_confirmed):
             duplicate_dialog.confirmed.connect(_on_duplicated_file_confirmed)
 
-    _scan_fs_for_scenes_and_scripts()
+    _scan_fs_for_scenes_and_scripts(true)
 
 ## Uninitialize FS when addon is shutting down
 func uninitialize() -> void:
@@ -161,8 +161,8 @@ func uninitialize() -> void:
     _instance = null
 
 ## Force this utility to rescan all filesystem
-func force_full_scan() -> void:
-    _scan_fs_for_scenes_and_scripts()
+func force_full_scan(emit_changes:bool = true) -> void:
+    _scan_fs_for_scenes_and_scripts(emit_changes)
 
 ## Returns information about all project scenes
 func get_scenes() -> Array[PackedSceneInfo]:
@@ -274,9 +274,9 @@ func _on_script_removed(script_path:String) -> void:
         on_scenes_and_scripts_removed.emit([], [_script_info_by_path[script_path]])
         _script_info_by_path.erase(script_path)
 
-func _scan_fs_for_scenes_and_scripts() -> void:
+func _scan_fs_for_scenes_and_scripts(emit_changes:bool) -> void:
     # Start by clearing all local data
-    if not _scene_info_by_path.is_empty() or not _script_info_by_path.is_empty():
+    if emit_changes and (not _scene_info_by_path.is_empty() or not _script_info_by_path.is_empty()):
         on_scenes_and_scripts_removed.emit(_scene_info_by_path.values().duplicate(), _script_info_by_path.values().duplicate())
 
     # Scan FS for scenes and scripts. Start bu scene, since scanning scenes also scans
@@ -300,7 +300,7 @@ func _scan_fs_for_scenes_and_scripts() -> void:
 
     # Finally, emit the changes
     _logger.info(func(): return "FS full scan: %s scene(s) and %s script(s) found" % [_scene_info_by_path.size(), _script_info_by_path.size()])
-    if not _scene_info_by_path.is_empty() or not _script_info_by_path.is_empty():
+    if emit_changes and (not _scene_info_by_path.is_empty() or not _script_info_by_path.is_empty()):
         on_scenes_and_scripts_changed.emit(_scene_info_by_path.values().duplicate(), _script_info_by_path.values().duplicate())
 
 func _register_packed_scene(packed_scene_path:String, use_cache:bool = false) -> PackedSceneInfo:
