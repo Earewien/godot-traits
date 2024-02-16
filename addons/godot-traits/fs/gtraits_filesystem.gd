@@ -70,15 +70,10 @@ class ScriptInfo extends RefCounted:
 # Signals
 #------------------------------------------
 
-## Emitted when some scene files have been updated
-signal on_scenes_changed(scene_info:Array[PackedSceneInfo])
-## Emitted when some scene files have been deleted
-signal on_scenes_removed(scene_info:Array[PackedSceneInfo])
-
-## Emitted when some script files have been updated
-signal on_scripts_changed(scene_info:Array[ScriptInfo])
-## Emitted when some script files have been deleted
-signal on_scripts_removed(scene_info:Array[PackedSceneInfo])
+## Emitted when some scene and/or script files have been updated
+signal on_scenes_and_scripts_changed(scene_info:Array[PackedSceneInfo], script_info:Array[ScriptInfo])
+## Emitted when some scene and/or script files have been deleted
+signal on_scenes_and_scripts_removed(scene_info:Array[PackedSceneInfo], script_info:Array[ScriptInfo])
 
 #------------------------------------------
 # Exports
@@ -259,34 +254,30 @@ func _on_packed_scene_changed(packed_scene_path:String) -> void:
     var packed_scene_info:PackedSceneInfo = _register_packed_scene(packed_scene_path, true)
     if packed_scene_info != null:
         _logger.info(func(): return "Scene changed: '%s'" % packed_scene_path)
-        on_scenes_changed.emit([packed_scene_info])
+        on_scenes_and_scripts_changed.emit([packed_scene_info], [])
 
 func _on_script_changed(script_path:String) -> void:
     var script_info:ScriptInfo = _register_script_info(script_path, false)
     if script_info != null:
         _logger.info(func(): return "Script changed: '%s'" % script_path)
-        on_scripts_changed.emit([script_info])
+        on_scenes_and_scripts_changed.emit([], [script_info])
 
 func _on_packed_scene_removed(packed_scene_path:String) -> void:
     if _scene_info_by_path.has(packed_scene_path):
         _logger.info(func(): return "Scene removed: '%s'" % packed_scene_path)
-        on_scenes_removed.emit([_scene_info_by_path[packed_scene_path]])
+        on_scenes_and_scripts_removed.emit([_scene_info_by_path[packed_scene_path]], [])
         _scene_info_by_path.erase(packed_scene_path)
 
 func _on_script_removed(script_path:String) -> void:
     if _script_info_by_path.has(script_path):
         _logger.info(func(): return "Script removed: '%s'" % script_path)
-        on_scripts_removed.emit([_script_info_by_path[script_path]])
+        on_scenes_and_scripts_removed.emit([], [_script_info_by_path[script_path]])
         _script_info_by_path.erase(script_path)
 
 func _scan_fs_for_scenes_and_scripts() -> void:
     # Start by clearing all local data
-    if not _scene_info_by_path.is_empty():
-        on_scenes_removed.emit(_scene_info_by_path.values().duplicate())
-        _scene_info_by_path.clear()
-    if not _script_info_by_path.is_empty():
-        on_scripts_removed.emit(_script_info_by_path.values().duplicate())
-        _script_info_by_path.clear()
+    if not _scene_info_by_path.is_empty() or not _script_info_by_path.is_empty():
+        on_scenes_and_scripts_removed.emit(_scene_info_by_path.values().duplicate(), _script_info_by_path.values().duplicate())
 
     # Scan FS for scenes and scripts. Start bu scene, since scanning scenes also scans
     #their root script: some work will not be done twice !
@@ -309,10 +300,8 @@ func _scan_fs_for_scenes_and_scripts() -> void:
 
     # Finally, emit the changes
     _logger.info(func(): return "FS full scan: %s scene(s) and %s script(s) found" % [_scene_info_by_path.size(), _script_info_by_path.size()])
-    if not _scene_info_by_path.is_empty():
-        on_scenes_changed.emit(_scene_info_by_path.values().duplicate())
-    if not _script_info_by_path.is_empty():
-        on_scripts_changed.emit(_script_info_by_path.values().duplicate())
+    if not _scene_info_by_path.is_empty() or not _script_info_by_path.is_empty():
+        on_scenes_and_scripts_changed.emit(_scene_info_by_path.values().duplicate(), _script_info_by_path.values().duplicate())
 
 func _register_packed_scene(packed_scene_path:String, use_cache:bool = false) -> PackedSceneInfo:
     var scene_info:PackedSceneInfo = _build_packed_scene_info(packed_scene_path, use_cache)
