@@ -70,17 +70,10 @@ func initialize() -> void:
         editor_settings.on_editor_indent_size_changed.connect(_on_editor_indent_size_changed)
 
     var filesystem:GTraitsFileSystem = GTraitsFileSystem.get_instance()
-    if not filesystem.on_scripts_changed.is_connected(_on_scripts_changed):
-        filesystem.on_scripts_changed.connect(_on_scripts_changed)
-    if not filesystem.on_scripts_removed.is_connected(_on_scripts_removed):
-        filesystem.on_scripts_removed.connect(_on_scripts_removed)
-    if not filesystem.on_scenes_changed.is_connected(_on_scenes_changed):
-        filesystem.on_scenes_changed.connect(_on_scenes_changed)
-    if not filesystem.on_scenes_removed.is_connected(_on_scenes_removed):
-        filesystem.on_scenes_removed.connect(_on_scenes_removed)
-
-    _logger.info(func(): return "Generating GTraits helper on editor startup")
-    _reload_scripts_traits_from_filesystem()
+    if not filesystem.on_scenes_and_scripts_changed.is_connected(_on_scene_and_scripts_changed):
+        filesystem.on_scenes_and_scripts_changed.connect(_on_scene_and_scripts_changed)
+    if not filesystem.on_scenes_and_scripts_removed.is_connected(_on_scene_and_scripts_removed):
+        filesystem.on_scenes_and_scripts_removed.connect(_on_scene_and_scripts_removed)
 
 func uninitialize() -> void:
     var editor_settings:GTraitsEditorSettings = GTraitsEditorSettings.get_instance()
@@ -92,14 +85,10 @@ func uninitialize() -> void:
         editor_settings.on_editor_indent_size_changed.disconnect(_on_editor_indent_size_changed)
 
     var filesystem:GTraitsFileSystem = GTraitsFileSystem.get_instance()
-    if filesystem.on_scripts_changed.is_connected(_on_scripts_changed):
-        filesystem.on_scripts_changed.disconnect(_on_scripts_changed)
-    if filesystem.on_scripts_removed.is_connected(_on_scripts_removed):
-        filesystem.on_scripts_removed.disconnect(_on_scripts_removed)
-    if filesystem.on_scenes_changed.is_connected(_on_scenes_changed):
-        filesystem.on_scenes_changed.disconnect(_on_scenes_changed)
-    if filesystem.on_scenes_removed.is_connected(_on_scenes_removed):
-        filesystem.on_scenes_removed.disconnect(_on_scenes_removed)
+    if filesystem.on_scenes_and_scripts_changed.is_connected(_on_scene_and_scripts_changed):
+        filesystem.on_scenes_and_scripts_changed.disconnect(_on_scene_and_scripts_changed)
+    if filesystem.on_scenes_and_scripts_removed.is_connected(_on_scene_and_scripts_removed):
+        filesystem.on_scenes_and_scripts_removed.disconnect(_on_scene_and_scripts_removed)
 
     _instance = null
 
@@ -139,8 +128,7 @@ func _scan_filesystem() -> void:
 
 func _reload_scripts_traits_from_filesystem() -> void:
     _traits_by_scripts.clear()
-    _on_scenes_changed(GTraitsFileSystem.get_instance().get_scenes())
-    _on_scripts_changed(GTraitsFileSystem.get_instance().get_scripts())
+    _on_scene_and_scripts_changed(GTraitsFileSystem.get_instance().get_scenes(), GTraitsFileSystem.get_instance().get_scripts())
 
 func _on_editor_indent_type_changed() -> void:
     _logger.info(func(): return "Generating GTraits helper on editor setting indent type changed")
@@ -150,26 +138,9 @@ func _on_editor_indent_size_changed() -> void:
     _logger.info(func(): return "Generating GTraits helper on editor setting indent size changed")
     _generate_gtraits_helper()
 
-func _on_scripts_changed(scripts:Array) -> void:
-    if not scripts.is_empty():
-        var has_changes:bool = false
-        for script in scripts:
-            if script.script_path != GTraitsEditorSettings.get_instance().get_gtraits_helper_output_path():
-                _handle_script_changed(script, false)
-                has_changes = true
-        if has_changes:
-            _generate_gtraits_helper()
-
-func _on_scripts_removed(scripts:Array) -> void:
-    var previous_known_script_count:int = _traits_by_scripts.size()
-    for script in scripts:
-        _traits_by_scripts.erase(script.script_path)
-    if previous_known_script_count != _traits_by_scripts.size():
-        _generate_gtraits_helper()
-
-func _on_scenes_changed(scenes:Array) -> void:
+func _on_scene_and_scripts_changed(scenes:Array, scripts:Array) -> void:
+    var has_changes:bool = false
     if not scenes.is_empty():
-        var has_changes:bool = false
         for scene in scenes:
             var old_scene_script_path = _scene_paths_by_script_path.get_key(scene.packed_scene_path)
             if scene.has_script():
@@ -182,19 +153,29 @@ func _on_scenes_changed(scenes:Array) -> void:
                     _scene_paths_by_script_path.erase_value(scene.packed_scene_path)
                     has_changes = true
 
-        if has_changes:
-            _generate_gtraits_helper()
+    if not scripts.is_empty():
+        for script in scripts:
+            if script.script_path != GTraitsEditorSettings.get_instance().get_gtraits_helper_output_path():
+                _handle_script_changed(script, false)
+                has_changes = true
 
-func _on_scenes_removed(scenes:Array) -> void:
+    if has_changes:
+        _generate_gtraits_helper()
+
+func _on_scene_and_scripts_removed(scenes:Array, scripts:Array) -> void:
+    var has_changes:bool = false
     if not scenes.is_empty():
-        var has_changes:bool = false
         for scene in scenes:
             var scene_script_path = _scene_paths_by_script_path.erase_value(scene.packed_scene_path)
             if scene_script_path != null && _traits_by_scripts.has(scene_script_path):
                 has_changes = true
 
-        if has_changes:
-            _generate_gtraits_helper()
+    var previous_known_script_count:int = _traits_by_scripts.size()
+    for script in scripts:
+        _traits_by_scripts.erase(script.script_path)
+
+    if previous_known_script_count != _traits_by_scripts.size() or has_changes:
+        _generate_gtraits_helper()
 
 func _handle_script_changed(script_info:GTraitsFileSystem.ScriptInfo, allow_generate:bool = false) -> void:
     var traits:Dictionary = _get_script_traits(script_info)

@@ -42,6 +42,10 @@ var _logger:GTraitsLogger = GTraitsLogger.new("gtraits_trait_build")
 func save(script_path:String, script_content:String) -> Script:
     var script:Script = _get_or_create_script(script_path)
 
+    # Check for changed before forcing a full save
+    if script.source_code == script_content:
+        return script
+
     # Change script content and save it
     script.source_code = script_content
 
@@ -77,8 +81,11 @@ func _get_or_create_script(script_path:String) -> Script:
     return script
 
 func _do_save_script(script:Script, script_path:String) -> void:
-    script.resource_path = script_path
+    var saver_flag:int = ResourceSaver.FLAG_NONE
+    if script.resource_path != script_path:
+        script.resource_path = script_path
+        saver_flag = ResourceSaver.FLAG_CHANGE_PATH
     DirAccess.make_dir_recursive_absolute(script.resource_path.get_base_dir())
-    var error = ResourceSaver.save(script, script.resource_path, ResourceSaver.FLAG_CHANGE_PATH)
+    var error = ResourceSaver.save(script, script.resource_path, saver_flag)
     if error != OK:
         _logger.warn(func(): return "⚠️ Unable to save script content into '%s': %s" % [script.resource_path, error_string(error)])
