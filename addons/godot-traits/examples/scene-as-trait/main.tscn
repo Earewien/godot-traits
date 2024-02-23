@@ -1,9 +1,11 @@
-[gd_scene load_steps=3 format=3 uid="uid://dijvmarxdk2hc"]
+[gd_scene load_steps=4 format=3 uid="uid://dijvmarxdk2hc"]
 
+[ext_resource type="Script" path="res://addons/godot-traits/examples/scene-as-trait/main.gd" id="1_4r4hv"]
 [ext_resource type="PackedScene" uid="uid://cadbhdndmycyl" path="res://addons/godot-traits/core/container/gtraits_container_2d.tscn" id="2_jeggq"]
 [ext_resource type="PackedScene" uid="uid://eddvhrjay5l5" path="res://addons/godot-traits/examples/traits/self_destructible.tscn" id="3_wv1ty"]
 
 [node name="Main" type="Node2D"]
+script = ExtResource("1_4r4hv")
 
 [node name="Heart" type="Polygon2D" parent="."]
 modulate = Color(0.807843, 0.203922, 0.156863, 1)
