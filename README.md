@@ -20,7 +20,7 @@ Given that Godot Engine lacks an official interface system, many developers reso
 - [x] Generation of an helper script to provide strong typed features and code completion in editor
 - [ ] Inline traits into scripts by using the `@inline_trait(TheTraitName)` annotation
 - [x] Helper methods to invoke code if object _is a [something]_ or else invoke a _fallback method_
-- [ ] Trait instantiation optimization (keep trait instantiation info in memory for future usage)
+- [x] Trait instantiation optimization (keep trait instantiation info in memory for future usage)
 - [ ] When removing a trait, also remove its dependencies if not used by other object traits
  
 ## 📄 Examples
@@ -98,7 +98,7 @@ class SomeClass:
 
 #### 🔑 Auto-generated trait helper class to manipulate traits
 
-_Godot Traits_ includes a code generation tool that offers helper methods for declaring and utilizing traits. This tool actively monitors trait declarations and modifications, automatically generating a `GDScript` file named `gtraits.gd` in a configurable folder.
+_Godot Traits_ includes a code generation tool that offers helper methods for declaring and utilizing traits. This tool actively monitors trait declarations and modifications, automatically generating a `GDScript` file named `gtraits.gd` in a configurable folder. This script is automatically declared as `GTraits` _autoload_ into _Project Settings_.
 
 Through this utility script, manipulating traits becomes easy and straightforward. It comprises four generic helper methods and four specific helper methods for each declared trait. For a trait named `Damageable`, the six methods are as follows:
 - `set_damageable(object:Object) -> Damageable`: Applies the specified trait to make an object _Damageable_,
@@ -125,7 +125,7 @@ func take_damage(damage:int) -> void:
 extends Node2D
 
 # #####
-# GTraits class contains damageable helpers since Godot Traits has automatically found the Damageable trait.
+# GTraits autoload contains damageable helpers since Godot Traits has automatically found the Damageable trait.
 # So we can write the following code
 # #####
 
@@ -204,14 +204,15 @@ class CriticalDamageable extends Damageable:
 
 ##### 📜 Auto-generated trait helper rules
 
-- The generated `GTraits` script file can be safely committed to your _Version Control System_ (VCS),
+- The generated `gtraits.gd` script file can be safely committed to your _Version Control System_ (VCS),
 - It is highly recommended not to make modifications in the generated `GTraits` script file, as these changes will be overwritten the next time the script is generated,
 - _Godot Traits_ Code generation is customizable: its settings can be accessed through the _Editor > Editor Settings_ menu, under _GTraits_ section:
   - The _GTraits Helper Path_ represents the folder path where the `GTraits` script will be generated,
-  - The _GTraits Helper Shortcut_ is a key combination that triggers a complete regeneration of the `GTraits` script by scanning all resources from `res://` folder.
+  - The _GTraits Helper Shortcut_ is a key combination that triggers a complete regeneration of the `gtraits.gd` script by scanning all resources from `res://` folder.
 
 ![image](addons/godot-traits/documentation/assets/gtraits_settings.png)
 
+- The `GTraits` _autoload_ is automatically declared into your _Project Settings_. It is highly recommanded to set it as the first _autoload_ of the project, to ensure that it is available for others _autoloads_. 
 - Nothing can prevent declaring the same trait _alias_ multiples times for various traits. Consequently, the _alias_ will be utilized for the helper methods of the first encountered trait, while helper methods for other traits will be generated as if there were no _alias_. A warning will be displayed in the _Godot Editor_ console.
 
 #### 🔑 Strongly-typed traits and autocompletion
@@ -234,7 +235,7 @@ _Examples of code completion and code navigation facilitated by the static typin
 _Godot Traits_ will automatically apply operations on instantiated traits depending on their type. 
 
 - For _object_ traits (traits that extend `Object` or `RefCounted`), no special applied operation is performed,
-- For _node_ traits (traits that extend `Node` or any sub-classes of `Node`), trait instances are automatically added as _child of the receiver_. The trait instance is added as an _internal node_, so it's not possible to retrieve it unless specifying the `include_internal` parameter in retrieval functions.
+- For _node_ traits (traits that extend `Node` or any sub-classes of `Node`), trait instances are automatically added as a child of its _receiver_. There should be no assumption on how trait instances are stored. The trait instance is added as an _internal node_, so it's not possible to retrieve it unless specifying the `include_internal` parameter in retrieval functions.
 
 ##### Removal
 
@@ -281,9 +282,8 @@ func _on_self_desctruct_timer_timeout() -> void:
 
 func _on_explosion_particules_finished() -> void:
     after_destruction.emit()
-```
 
-```gdscript
+
 #####
 # File main.gd
 #####
@@ -298,6 +298,14 @@ func _ready() -> void:
 ```
 
 Take note of the usage of the `_initialize` function in the self-destructible trait. This method is recognized by _Godot Traits_ and is automatically invoked after the instantiation of a scene trait to execute dependency injection. The `_init` function in _Godot_ cannot be utilized for dependency injection in scene traits as it cannot accept any arguments.
+
+This approach enables the direct handling of _scene traits_ from code. However, the _Godot Editor_ provides numerous built-in functionalities for scenes, such as _export variables_. Managing _scene traits_ from code limits the utilization of these features. To address this limitation, _Godot Traits_ introduces _trait containers_ nodes, allowing the declaration of traits directly within your scene tree.
+
+![image](addons/godot-traits/documentation/assets/gtraits_container_nodes.png)
+
+Containers can be added as children of any `Node`; as a result, this node will become the _receiver_ of all _scene traits_ declared by the container. _Scene traits_ can then be added as children of those containers. The following example is identical to the previously mentioned _scene trait_ code example:
+
+![image](addons/godot-traits/documentation/assets/gtraits_container_node_example.png)
 
 ###### 📜 Scene as trait rules
 
