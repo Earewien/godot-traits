@@ -2,9 +2,30 @@ extends RefCounted
 class_name GTraitsTypeOracle
 
 ##
-## Type Oracle [GTraits].
+## Type Oracle for [i]Godot Traits[/i].
 ##
 ## [color=red]This is an internal API.[/color]
+
+## Trait information
+class TraitInfo extends RefCounted:
+    ## Trait qualified name
+    var trait_name:String
+    ## Trait unique identifier
+    var trait_identifier:String
+    ## Script defining the trait
+    var trait_type:Script
+    ## If trait is a scene, trait scene path, empty otherwise
+    var trait_scene_path:String
+
+    func _init(tn:String, tt:Script, tsp:String) -> void:
+        trait_name = tn
+        trait_identifier = "_%s_" % trait_name.replace(".", "_").to_lower()
+        trait_type = tt
+        trait_scene_path = tsp
+
+    ## Returns if this trait is a scene trait or not.
+    func is_scene_trait() -> bool:
+        return not trait_scene_path.is_empty()
 
 #------------------------------------------
 # Constants
@@ -28,6 +49,10 @@ class_name GTraitsTypeOracle
 
 # Singleton
 static var _instance:GTraitsTypeOracle
+
+# All known traits. As a dictionary to check trait in O(1)
+# Key is the trait script, value is a TraitInfo
+var _known_traits:Dictionary
 
 #------------------------------------------
 # Godot override functions
@@ -97,6 +122,19 @@ func filter_super_script_types_and_sub_script_types_of(scripts:Array[Script], sc
     filtered_scripts.append(script)
 
     return filtered_scripts
+
+## Declare a class as a trait, making it available for dependency injection. If the scene path is not empty,
+## the given scene will be instantiated instead of the given script when a trait instance will be needed
+func register_trait(a_trait:Script, a_trait_name:String, scene_path:String = "") -> void:
+    _known_traits[a_trait] = TraitInfo.new(a_trait_name, a_trait, scene_path)
+
+## Returns [code]true[/code] is the given class is a trait, [code]false[/code] otherwise.
+func is_trait(script:Script) -> bool:
+    return _known_traits.has(script)
+
+## Returns an instance of [GTraitsTypeOracle.TraitInfo] describing the given type, [code]null[/code] otherwise.
+func get_trait_info(script:Script) -> TraitInfo:
+    return _known_traits.get(script, null)
 
 #------------------------------------------
 # Private functions

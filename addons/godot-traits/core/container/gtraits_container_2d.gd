@@ -1,4 +1,12 @@
-extends Node2D
+@icon("res://addons/godot-traits/core/container/gtraits_container_icon_2d.svg")
+class_name GTraitsContainer2D
+extends GTraitsContainer
+
+##
+## Trait container for 2D scene traits, allowing to declare scene traits directly in [i]Godot Editor[/i].
+##
+## See [GTraitsContainer] for documentation.
+##
 
 #------------------------------------------
 # Constants
@@ -20,16 +28,9 @@ extends Node2D
 # Private variables
 #------------------------------------------
 
-@onready var _heart: Polygon2D = $Heart
-
 #------------------------------------------
 # Godot override functions
 #------------------------------------------
-
-func _ready() -> void:
-    GTraits.as_self_destructible(_heart).after_destruction.connect(func():
-        GTraits.unset_self_destructible(_heart)
-        _heart.queue_free())
 
 #------------------------------------------
 # Public functions
@@ -39,3 +40,6 @@ func _ready() -> void:
 # Private functions
 #------------------------------------------
 
+func _set_trait_container_type() -> void:
+    # Flagging this container as Node2D scene trait container. For trait storage at runtime
+    set_meta(GTraitsStorage.META_KEY_CONTAINER_TYPE, "Node2D")

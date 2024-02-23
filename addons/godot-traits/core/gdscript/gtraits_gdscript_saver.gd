@@ -2,7 +2,7 @@ extends RefCounted
 class_name GTraitsGDScriptSaver
 
 ##
-## GDScript resource saver for [GTraits].
+## GDScript resource saver for [i]Godot Traits[/i].
 ##
 ## [color=red]This is an internal API.[/color]
 

@@ -2,7 +2,7 @@ extends RefCounted
 class_name GTraitsFileSystem
 
 ##
-## Filesystem utility for [GTraits].
+## Filesystem utility for [i]Godot Traits[/i].
 ##
 ## [color=red]This is an internal API.[/color]
 

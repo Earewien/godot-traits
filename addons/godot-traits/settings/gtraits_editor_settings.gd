@@ -42,7 +42,7 @@ var _SETTINGS_HELPER_SHORTCUT_INFOS:Dictionary = {
 # Signals
 #------------------------------------------
 
-## Emited when the path to the [GTraits] script has changed
+## Emited when the path to the [code]GTraits[/code] autoload script has changed
 signal on_trait_invoker_path_changed()
 ## Emitedwhen the editor indentation type has changed
 signal on_editor_indent_type_changed()
@@ -105,6 +105,11 @@ func uninitialize() -> void:
 func get_gtraits_helper_output_path() -> String:
     var output_path:String = _get_setting_value(_SETTINGS_HELPER_OUTPUT_PATH_INFOS)
     return "%s/gtraits.gd" % output_path
+
+## Returns the absolute path to the trait registry output folder
+func get_gtraits_registry_helper_output_path() -> String:
+    var output_path:String = _get_setting_value(_SETTINGS_HELPER_OUTPUT_PATH_INFOS)
+    return "%s/gtraits_registry.gd" % output_path
 
 func get_gtraits_helper_regeneration_shortcut() -> Shortcut:
     return _get_setting_value(_SETTINGS_HELPER_SHORTCUT_INFOS)
