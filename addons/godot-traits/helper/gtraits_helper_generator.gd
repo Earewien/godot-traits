@@ -31,6 +31,8 @@ static var _instance:GTraitsHelperGenerator
 
 # Path to generated [code]GTraits[/code] autoload script
 var _gtraits_script_path:String
+# Path to generated [code]GTraitsRegistry[/code] autoload script
+var _gtraits_registry_script_path:String
 # Parser to get script information
 var _gdscript_parser:GTraitsGDScriptParser = GTraitsGDScriptParser.new()
 # Allows to save script content into a file
@@ -62,6 +64,7 @@ static func get_instance() -> GTraitsHelperGenerator:
 func initialize() -> void:
     var editor_settings:GTraitsEditorSettings = GTraitsEditorSettings.get_instance()
     _gtraits_script_path = editor_settings.get_gtraits_helper_output_path()
+    _gtraits_registry_script_path = editor_settings.get_gtraits_registry_helper_output_path()
     if not editor_settings.on_trait_invoker_path_changed.is_connected(_on_trait_invoker_path_changed):
         editor_settings.on_trait_invoker_path_changed.connect(_on_trait_invoker_path_changed)
     if not editor_settings.on_editor_indent_type_changed.is_connected(_on_editor_indent_type_changed):
@@ -103,23 +106,22 @@ func clear_and_regenerate() -> void:
 func _on_trait_invoker_path_changed() -> void:
     var old_gtraits_path:String = _gtraits_script_path
     _gtraits_script_path = GTraitsEditorSettings.get_instance().get_gtraits_helper_output_path()
+    var old_gtraits_registry_script_path:String = _gtraits_registry_script_path
+    _gtraits_registry_script_path = GTraitsEditorSettings.get_instance().get_gtraits_registry_helper_output_path()
 
+    var at_least_one_exists:bool = false
     if FileAccess.file_exists(old_gtraits_path):
-        # Quite complicated to avoid editor to be lost...
-        # First, load old script to put in into memory
-        var gtrait_script:Script = load(old_gtraits_path)
-        # Then delete it from filesystem. Trick is : Godot Editor can not see this deletion
-        # So we will run a FS scan, in order to make Godot Editor aware of this file deletion
+        at_least_one_exists = true
         DirAccess.remove_absolute(old_gtraits_path)
+    if FileAccess.file_exists(old_gtraits_registry_script_path):
+        at_least_one_exists = true
+        DirAccess.remove_absolute(old_gtraits_registry_script_path)
+
+    if at_least_one_exists:
+        DirAccess.remove_absolute(old_gtraits_path.get_base_dir())
         _scan_filesystem()
 
-        # Now, FS has been scanned, so it's safe to save the script at its new location
-        gtrait_script.resource_path = _gtraits_script_path
-        DirAccess.make_dir_recursive_absolute(_gtraits_script_path.get_base_dir())
-        ResourceSaver.save(gtrait_script, gtrait_script.resource_path)
-        GTraitsProjectSettings.get_instance().update_gtraits_autoload()
-    else:
-        _generate_gtraits_helper()
+    _generate_gtraits_helper()
 
 func _scan_filesystem() -> void:
     var rss_filesystem: EditorFileSystem = EditorInterface.get_resource_filesystem()
@@ -236,24 +238,26 @@ func _generate_gtraits_helper() -> void:
     var sorted_script_paths:Array = _traits_by_scripts.keys()
     sorted_script_paths.sort()
 
-    var content:String = ''
-    content += "# ##########################################################################\n"
-    content += "# This file is auto generated and should ne be edited !\n"
-    content += "# It can safely be committed to your VCS.\n"
-    content += "# This script is automatically declared as singleton in your\n"
-    content += "# Project Settings. Do not remove it or disable it or GTraits will not\n"
-    content += "# work as expected\n"
-    content += "# ##########################################################################\n"
-    content += "\n"
-    content += "extends Node\n"
-    content += "\n"
-    content += "## \n"
-    content += "## Auto-generated utility to handle traits in Godot.\n"
-    content += "## \n"
-    content += "\n"
-    content += "#region Trait declaration\n\n"
+    var header_content:String = ''
+    header_content += "# ##########################################################################\n"
+    header_content += "# This file is auto generated and should ne be edited !\n"
+    header_content += "# It can safely be committed to your VCS.\n"
+    header_content += "# This script is automatically declared as singleton in your\n"
+    header_content += "# Project Settings. Do not remove it or disable it or GTraits will not\n"
+    header_content += "# work as expected\n"
+    header_content += "# ##########################################################################\n"
+    header_content += "\n"
+
+    var registry_content:String = header_content
+    registry_content += "extends Node\n"
+    registry_content += "\n"
+    registry_content += "## \n"
+    registry_content += "## Auto-generated utility to handle traits in Godot.\n"
+    registry_content += "## \n"
+    registry_content += "\n"
+    registry_content += "#region Trait declaration\n\n"
     if not _traits_by_scripts.is_empty():
-        content += "static func _static_init() -> void:\n"
+        registry_content += "static func _static_init() -> void:\n"
         for script_path in sorted_script_paths:
             var traits = _traits_by_scripts[script_path]
 
@@ -266,15 +270,18 @@ func _generate_gtraits_helper() -> void:
                 if _scene_paths_by_script_path.has_key(the_trait.script_path):
                     var scene_paths:Array = _scene_paths_by_script_path.get_values(the_trait.script_path)
                     if scene_paths.size() == 1:
-                        content += indent_string + "GTraitsCore.register_trait(%s, \"%s\", \"%s\")\n" % [the_trait.qualified_class_name, the_trait.qualified_class_name, scene_paths.front()]
+                        registry_content += indent_string + "GTraitsCore.register_trait(%s, \"%s\", \"%s\")\n" % [the_trait.qualified_class_name, the_trait.qualified_class_name, scene_paths.front()]
                     else:
                         _logger.warn(func(): return "⚠️ Multiple scenes are using script trait '%s' as root script. It will not be declared as a Scene trait." % the_trait.qualified_class_name)
-                        content += indent_string + "GTraitsCore.register_trait(%s, \"%s\")\n" % [the_trait.qualified_class_name, the_trait.qualified_class_name]
+                        registry_content += indent_string + "GTraitsCore.register_trait(%s, \"%s\")\n" % [the_trait.qualified_class_name, the_trait.qualified_class_name]
                 else:
-                    content += indent_string + "GTraitsCore.register_trait(%s, \"%s\")\n" % [the_trait.qualified_class_name, the_trait.qualified_class_name]
+                    registry_content += indent_string + "GTraitsCore.register_trait(%s, \"%s\")\n" % [the_trait.qualified_class_name, the_trait.qualified_class_name]
+    registry_content += "\n"
+    registry_content += "#endregion\n\n"
 
-    content += "\n"
-    content += "#endregion\n"
+    var content:String = header_content
+    content += "extends RefCounted\n"
+    content += "class_name GTraits\n"
     content += "\n"
     content += "#region Core methods\n\n"
     content += "## Shortcut for [method GTraitsCore.as_a]\n"
@@ -423,7 +430,9 @@ func _generate_gtraits_helper() -> void:
 
     var output_path:String = GTraitsEditorSettings.get_instance().get_gtraits_helper_output_path()
     _gdscript_saver.save(output_path, content)
-    GTraitsProjectSettings.get_instance().update_gtraits_autoload()
+    var output_registry_path:String = GTraitsEditorSettings.get_instance().get_gtraits_helper_output_path().get_base_dir() + "/gtraits_registry.gd"
+    _gdscript_saver.save(output_registry_path, registry_content)
+    GTraitsProjectSettings.get_instance().update_gtraits_registry_autoload()
     _logger.debug(func(): return "   GTraits helper generated in %s" % output_path)
 
 func _get_indent_string() -> String:

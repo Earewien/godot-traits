@@ -15,7 +15,7 @@ config/features=PackedStringArray("4.2", "GL Compatibility")
 
 [autoload]
 
-GTraits="*res://gtraits/helper/gtraits.gd"
+GTraitsRegistry="*res://gtraits/helper/gtraits_registry.gd"
 
 [editor_plugins]
 

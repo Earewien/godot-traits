@@ -106,6 +106,11 @@ func get_gtraits_helper_output_path() -> String:
     var output_path:String = _get_setting_value(_SETTINGS_HELPER_OUTPUT_PATH_INFOS)
     return "%s/gtraits.gd" % output_path
 
+## Returns the absolute path to the trait registry output folder
+func get_gtraits_registry_helper_output_path() -> String:
+    var output_path:String = _get_setting_value(_SETTINGS_HELPER_OUTPUT_PATH_INFOS)
+    return "%s/gtraits_registry.gd" % output_path
+
 func get_gtraits_helper_regeneration_shortcut() -> Shortcut:
     return _get_setting_value(_SETTINGS_HELPER_SHORTCUT_INFOS)
 

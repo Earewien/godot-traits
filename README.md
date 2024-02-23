@@ -96,9 +96,9 @@ class SomeClass:
 - annotations parameters must be declared between parenthesis, right after the `@trait` annotation. Parameters are separated by the `,` character, and parameter key and value are separated by the `=` character,
 - if a script declares traits in _nested_ classes without declaring a _top level_ class, those traits will only be available in this script since those classes can be considered as _private_. The auto-generated class helper will not generate helper methods for those traits as they are _private_. See ___Auto-generated trait helper class to manipulate traits___ paragraph for more details.
 
-#### 🔑 Auto-generated trait helper class to manipulate traits
+#### 🔑 Auto-generated trait helper classes to manipulate traits
 
-_Godot Traits_ includes a code generation tool that offers helper methods for declaring and utilizing traits. This tool actively monitors trait declarations and modifications, automatically generating a `GDScript` file named `gtraits.gd` in a configurable folder. This script is automatically declared as `GTraits` _autoload_ into _Project Settings_.
+_Godot Traits_ includes a code generation tool that offers helper methods for declaring and utilizing traits. This tool actively monitors trait declarations and modifications, automatically generating two `GDScript` files named `gtraits.gd` and `gtraits_registry.gd` in a configurable folder. The _registry_ script is automatically declared as `GTraitsRegistry` _autoload_ into _Project Settings_.
 
 Through this utility script, manipulating traits becomes easy and straightforward. It comprises four generic helper methods and four specific helper methods for each declared trait. For a trait named `Damageable`, the six methods are as follows:
 - `set_damageable(object:Object) -> Damageable`: Applies the specified trait to make an object _Damageable_,
@@ -204,15 +204,15 @@ class CriticalDamageable extends Damageable:
 
 ##### 📜 Auto-generated trait helper rules
 
-- The generated `gtraits.gd` script file can be safely committed to your _Version Control System_ (VCS),
-- It is highly recommended not to make modifications in the generated `GTraits` script file, as these changes will be overwritten the next time the script is generated,
+- The generated `gtraits.gd` and `gtraits_registry.gd` script files can be safely committed to your _Version Control System_ (VCS),
+- It is highly recommended not to make modifications in the generated script files, as these changes will be overwritten the next time scripts are generated,
 - _Godot Traits_ Code generation is customizable: its settings can be accessed through the _Editor > Editor Settings_ menu, under _GTraits_ section:
-  - The _GTraits Helper Path_ represents the folder path where the `GTraits` script will be generated,
-  - The _GTraits Helper Shortcut_ is a key combination that triggers a complete regeneration of the `gtraits.gd` script by scanning all resources from `res://` folder.
+  - The _GTraits Helper Path_ represents the folder path where the `GTraits` and `GTraitsRegistry` scripts will be generated,
+  - The _GTraits Helper Shortcut_ is a key combination that triggers a complete regeneration of the `gtraits.gd` and `gtraits_registry.gd` scripts by scanning all resources from `res://` folder.
 
 ![image](addons/godot-traits/documentation/assets/gtraits_settings.png)
 
-- The `GTraits` _autoload_ is automatically declared into your _Project Settings_. It is highly recommanded to set it as the first _autoload_ of the project, to ensure that it is available for others _autoloads_. 
+- The `GTraitsRegistry` _autoload_ is automatically declared into your _Project Settings_. It is highly recommanded to set it as the first _autoload_ of the project, to ensure that it is available for others _autoloads_. 
 - Nothing can prevent declaring the same trait _alias_ multiples times for various traits. Consequently, the _alias_ will be utilized for the helper methods of the first encountered trait, while helper methods for other traits will be generated as if there were no _alias_. A warning will be displayed in the _Godot Editor_ console.
 
 #### 🔑 Strongly-typed traits and autocompletion
