@@ -65,10 +65,14 @@ func _set_trait_container_type() -> void:
     set_meta(GTraitsStorage.META_KEY_CONTAINER_TYPE, "Node")
 
 func _on_child_order_changed() -> void:
-    for child in get_children():
-        # Check if invalid node is present or not
-        if child.get_meta(_META_KEY_NOT_A_TRAIT, false):
-            continue
+	# Check if the container is still in the tree
+	if not is_inside_tree():
+		return
+	
+	for child in get_children():
+		# Check if invalid node is present or not
+		if child.get_meta(_META_KEY_NOT_A_TRAIT, false):
+			continue
 
         # Flag invalid node
         if not GTraitsTypeOracle.get_instance().is_trait(child.get_script()):
