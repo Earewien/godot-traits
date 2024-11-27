@@ -149,7 +149,7 @@ func _get_scene_trait_container_for(receiver:Node, trait_instance:Node) -> Node:
         elif required_container_type == "Node2D":
             container = preload("res://addons/godot-traits/core/container/gtraits_container_2d.tscn").instantiate()
             #container.name = "GTraitsContainer2D"
-		elif required_container_type == "Node3D":
+        elif required_container_type == "Node3D":
             container = preload("res://addons/godot-traits/core/container/gtraits_container_3d.tscn").instantiate()
             #container.name = "GTraitsContainer3D"
         else:
@@ -169,4 +169,3 @@ func _free_trait_instance(trait_instance:Object) -> void:
         pass
     else:
         trait_instance.free()
-
