@@ -51,6 +51,9 @@ func _init() -> void:
     # This callback is called before the trait _ready function and after it's _init function
     # so it's perfect to invoke the trait _initialize function
     child_order_changed.connect(_on_child_order_changed)
+    # Children added to this container outside SceneTree are not yet declared as trait
+    # So when this container is added to the scene tree, declare them as trait if needed
+    tree_entered.connect(_on_child_order_changed)
 
 #------------------------------------------
 # Public functions
