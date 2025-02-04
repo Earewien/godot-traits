@@ -152,6 +152,8 @@ func _get_scene_trait_container_for(receiver:Node, trait_instance:Node) -> Node:
         elif required_container_type == "Node3D":
             container = preload("res://addons/godot-traits/core/container/gtraits_container_3d.tscn").instantiate()
             #container.name = "GTraitsContainer3D"
+        elif required_container_type == "Control":
+             container = preload("res://addons/godot-traits/core/container/gtraits_container_ui.tscn").instantiate()
         else:
             assert(false, "⚠️ Unknow type of container: %s" % required_container_type)
         receiver.add_child(container, true, Node.INTERNAL_MODE_BACK)
