@@ -135,7 +135,7 @@ func _get_scene_trait_container_for(receiver:Node, trait_instance:Node) -> Node:
     var container:Node = null
 
     # First, try to find an already existing container
-    var required_container_type:String = trait_instance.get_script().get_instance_base_type()
+    var required_container_type: String = _get_base_type(trait_instance.get_script().get_instance_base_type())
     for child in receiver.get_children(true):
         if child.get_meta(META_KEY_CONTAINER_TYPE, "") == required_container_type:
             container = child
@@ -152,13 +152,31 @@ func _get_scene_trait_container_for(receiver:Node, trait_instance:Node) -> Node:
         elif required_container_type == "Node3D":
             container = preload("res://addons/godot-traits/core/container/gtraits_container_3d.tscn").instantiate()
             #container.name = "GTraitsContainer3D"
+        elif required_container_type == "Control":
+            container = preload("res://addons/godot-traits/core/container/gtraits_container_control.tscn").instantiate()
+            #container.name = "GTraitsContainerControl"
         else:
             assert(false, "⚠️ Unknow type of container: %s" % required_container_type)
         receiver.add_child(container, true, Node.INTERNAL_MODE_BACK)
 
     return container
 
-func _get_trait_instance_meta_name(a_trait:Script) -> String:
+func _get_base_type(type_name: String) -> String:
+    # Check if the class is registered in ClassDB
+    if not ClassDB.class_exists(type_name):
+        assert(false, "⚠️ Unknow type: %s" % type_name)
+        return ''
+
+    if type_name == 'Node' \
+        || type_name == 'Node2D' \
+        || type_name == 'Node3D' \
+        || type_name == 'Control':
+        return type_name
+
+    # Check the parent
+    return _get_base_type(ClassDB.get_parent_class(type_name))
+
+func _get_trait_instance_meta_name(a_trait: Script) -> String:
     return META_TRAIT_INSTANCE_PREFIX + GTraitsTypeOracle.get_instance().get_trait_info(a_trait).trait_name + META_TRAIT_INSTANCE_SUFFIX
 
 func _free_trait_instance(trait_instance:Object) -> void:

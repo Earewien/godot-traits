@@ -1,4 +1,12 @@
-extends Node2D
+@icon("res://addons/godot-traits/core/container/gtraits_container_icon_control.svg")
+class_name GTraitsContainerControl
+extends GTraitsContainer
+
+##
+## Trait container for Control scene traits, allowing to declare scene traits directly in [i]Godot Editor[/i].
+##
+## See [GTraitsContainer] for documentation.
+##
 
 #------------------------------------------
 # Constants
@@ -20,19 +28,9 @@ extends Node2D
 # Private variables
 #------------------------------------------
 
-@onready var _heart: Polygon2D = $Heart
-
 #------------------------------------------
 # Godot override functions
 #------------------------------------------
-
-func _ready() -> void:
-    GTraits.as_self_destructible(_heart).after_destruction.connect(func():
-        GTraits.unset_self_destructible(_heart)
-        _heart.queue_free())
-
-    # Scene trait can also be declared directly in code
-    GTraits.set_labelled(_heart).text = "Boom !"
 
 #------------------------------------------
 # Public functions
@@ -42,3 +40,6 @@ func _ready() -> void:
 # Private functions
 #------------------------------------------
 
+func _set_trait_container_type() -> void:
+    # Flagging this container as Control scene trait container. For trait storage at runtime
+    set_meta(GTraitsStorage.META_KEY_CONTAINER_TYPE, "Control")
