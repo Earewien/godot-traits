@@ -4,14 +4,13 @@ class_name InnerTraits
 
 # @trait(alias=Moveable)
 class Moveable extends RefCounted:
-
     # This is the receiver as a CharacterBody2D
-    var _character:CharacterBody2D
+    var _character: CharacterBody2D
 
-    func _init(character:CharacterBody2D) -> void:
+    func _init(character: CharacterBody2D) -> void:
         _character = character
 
-    func move(dir:Vector2) -> void:
+    func move(dir: Vector2) -> void:
         _character.velocity += dir * 300
         _character.move_and_slide()
 
@@ -46,4 +45,3 @@ class Moveable extends RefCounted:
 #------------------------------------------
 # Private functions
 #------------------------------------------
-

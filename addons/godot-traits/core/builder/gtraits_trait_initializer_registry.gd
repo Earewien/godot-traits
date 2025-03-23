@@ -27,14 +27,14 @@ class_name GTraitsTraitInitializerRegistry
 #------------------------------------------
 
 # Singleton
-static var _instance:GTraitsTraitInitializerRegistry
+static var _instance: GTraitsTraitInitializerRegistry
 
 # _init functions registry: keys are Script, values are GTraitsTraitInitializer
-var _init_func_registry:Dictionary
+var _init_func_registry: Dictionary
 # _initialize functions registry: keys are Script, values are GTraitsTraitInitializer
-var _initialize_func_registry:Dictionary
+var _initialize_func_registry: Dictionary
 # Logger
-var _logger:GTraitsLogger = GTraitsLogger.new("gtraits_trait_init_reg")
+var _logger: GTraitsLogger = GTraitsLogger.new("gtraits_trait_init_reg")
 
 #------------------------------------------
 # Godot override functions
@@ -51,16 +51,16 @@ static func get_instance() -> GTraitsTraitInitializerRegistry:
     return _instance
 
 ## Returns the [code]_init[/code] function initializer for the given trait. Never [code]null[/code]
-func get_init_initializer(a_trait:Script) -> GTraitsTraitInitializer:
-    var initializer:GTraitsTraitInitializer = _init_func_registry.get(a_trait)
+func get_init_initializer(a_trait: Script) -> GTraitsTraitInitializer:
+    var initializer: GTraitsTraitInitializer = _init_func_registry.get(a_trait)
     if initializer == null:
         _register_initialization_methods(a_trait)
         initializer = _init_func_registry.get(a_trait)
     return initializer
 
 ## Returns the [code]_initialize[/code] function initializer for the given trait. Never [code]null[/code]
-func get_initialize_initializer(a_trait:Script) -> GTraitsTraitInitializer:
-    var initializer:GTraitsTraitInitializer = _initialize_func_registry.get(a_trait)
+func get_initialize_initializer(a_trait: Script) -> GTraitsTraitInitializer:
+    var initializer: GTraitsTraitInitializer = _initialize_func_registry.get(a_trait)
     if initializer == null:
         _register_initialization_methods(a_trait)
         initializer = _initialize_func_registry.get(a_trait)
@@ -70,22 +70,22 @@ func get_initialize_initializer(a_trait:Script) -> GTraitsTraitInitializer:
 # Private functions
 #------------------------------------------
 
-func _register_initialization_methods(a_trait:Script) -> void:
-    var _init_initializer:GTraitsTraitInitializer
-    var _initialize_initializer:GTraitsTraitInitializer
+func _register_initialization_methods(a_trait: Script) -> void:
+    var _init_initializer: GTraitsTraitInitializer
+    var _initialize_initializer: GTraitsTraitInitializer
 
     for method in a_trait.get_script_method_list():
         # To print a warning if the receiver is injected multiple times in the same constructor
         # Maybe something is wrong in that case...
-        var receiver_object_already_injected:bool = false
+        var receiver_object_already_injected: bool = false
 
         if method.name == "_init" or method.name == "_initialize":
-            var initializer:GTraitsTraitInitializer = GTraitsTraitInitializer.new(method.name, a_trait)
+            var initializer: GTraitsTraitInitializer = GTraitsTraitInitializer.new(method.name, a_trait)
 
             # Find/construct required arguments
             for arg in method.args:
                 # Is it the receiver itself, or a trait ?
-                var constructor_argument_class_name:String = arg.class_name
+                var constructor_argument_class_name: String = arg.class_name
                 if constructor_argument_class_name.is_empty():
                     # Argument is not strongly typed. Just pass the receiver itself as parameter
                     # Hope for the best !
@@ -94,7 +94,7 @@ func _register_initialization_methods(a_trait:Script) -> void:
                     receiver_object_already_injected = true
                     initializer.parameter_types.append(GTraitsTraitInitializer.AnyParameter.new())
                 else:
-                    initializer.parameter_types.append(GTraitsTraitInitializer.TypedParameter.new( \
+                    initializer.parameter_types.append(GTraitsTraitInitializer.TypedParameter.new(\
                         constructor_argument_class_name, \
                         GTraitsTypeOracle.get_instance().get_script_from_class_name(constructor_argument_class_name)))
 

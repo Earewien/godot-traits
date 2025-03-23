@@ -37,7 +37,7 @@ signal after_destruction
 # The trait receiver
 var _receiver
 # The logger
-var _logger:Loggable
+var _logger: Loggable
 
 #------------------------------------------
 # Godot override functions

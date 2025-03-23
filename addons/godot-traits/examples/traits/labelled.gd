@@ -30,7 +30,7 @@ extends Label
 #------------------------------------------
 
 # The trait receiver
-var _receiver:Node2D
+var _receiver: Node2D
 
 #------------------------------------------
 # Godot override functions
@@ -44,7 +44,7 @@ func _init() -> void:
 
 # Since this trait is also a Scene, the _init function can not be overridden with parameters. To overcome this issue,
 # Godot Traits will automatically call the _initialize function, if it exists, right after the Scene instantiation.
-func _initialize(receiver:Node2D) -> void:
+func _initialize(receiver: Node2D) -> void:
     _receiver = receiver
 
 func _process(_delta: float) -> void:

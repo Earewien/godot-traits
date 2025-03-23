@@ -22,7 +22,7 @@ extends Node
 # Constants
 #------------------------------------------
 
-const _META_KEY_NOT_A_TRAIT:String = "__not_a_trait__"
+const _META_KEY_NOT_A_TRAIT: String = "__not_a_trait__"
 
 #------------------------------------------
 # Signals
@@ -85,9 +85,9 @@ func _on_child_order_changed() -> void:
         else:
             _initialize_trait(child)
 
-func _initialize_trait(a_trait_instance:Node) -> void:
-    var receiver:Node = get_parent()
-    var the_trait:Script = a_trait_instance.get_script()
+func _initialize_trait(a_trait_instance: Node) -> void:
+    var receiver: Node = get_parent()
+    var the_trait: Script = a_trait_instance.get_script()
 
     # Check for already initialized scene traits: if already initialized, just go
     # There is a corner case where the same trait has already been added through code: this is an error
@@ -106,12 +106,12 @@ func _initialize_trait(a_trait_instance:Node) -> void:
         .invoke(GTraitsTraitBuilder.new(), receiver, a_trait_instance)
 
     # Save trait instance into the receiver trait instances storage
-    var trait_storage:GTraitsStorage = GTraitsStorage.get_instance()
+    var trait_storage: GTraitsStorage = GTraitsStorage.get_instance()
     trait_storage.store_trait_instance(receiver, a_trait_instance, the_trait)
 
     # If trait has parent classes, to prevent to create new trait instance if parent classes are asked for this
     # receiver, register this trait instance has the one to be returned when a parent class is asked (POO style)
-    var parent_script:Script = the_trait.get_base_script()
-    while(parent_script != null):
+    var parent_script: Script = the_trait.get_base_script()
+    while (parent_script != null):
         trait_storage.store_trait_instance(receiver, a_trait_instance, parent_script)
         parent_script = parent_script.get_base_script()

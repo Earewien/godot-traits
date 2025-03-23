@@ -6,11 +6,11 @@ class_name GodotTraitsEditorPlugin
 ## Editor plugins for Godot Traits addon
 ##
 
-static var _instance:GodotTraitsEditorPlugin
+static var _instance: GodotTraitsEditorPlugin
 const _palette_command_key_regen_script = "gtraits/regenerate-gtraits-script"
 
 # Logger
-var _logger:GTraitsLogger = GTraitsLogger.new("gtraits_plugin")
+var _logger: GTraitsLogger = GTraitsLogger.new("gtraits_plugin")
 
 ## Returns the [GodotTraitsEditorPlugin] instance
 static func get_instance() -> GodotTraitsEditorPlugin:

@@ -13,19 +13,19 @@ class_name GTraitsStorage
 
 ## Meta key that stores object traits.
 ## Meta object is an [Array] of [Script]
-const META_TRAIT_SCRIPTS:String = "__traits__"
+const META_TRAIT_SCRIPTS: String = "__traits__"
 
 ## Meta key prefix that stores the instantiated trait into an object.
 ## Meta object is an [Object]
-const META_TRAIT_INSTANCE_PREFIX:String = "__trait_"
+const META_TRAIT_INSTANCE_PREFIX: String = "__trait_"
 
 ## Meta key suffix that stores the instantiated trait into an object.
 ## Meta object is an [Object]
-const META_TRAIT_INSTANCE_SUFFIX:String = "__"
+const META_TRAIT_INSTANCE_SUFFIX: String = "__"
 
 ## Meta key for scene trait containers type
 ## Meta object is a [String]: Node, Node2D or Node3D
-const META_KEY_CONTAINER_TYPE:String = "__trait_container_type__"
+const META_KEY_CONTAINER_TYPE: String = "__trait_container_type__"
 
 #------------------------------------------
 # Signals
@@ -44,7 +44,7 @@ const META_KEY_CONTAINER_TYPE:String = "__trait_container_type__"
 #------------------------------------------
 
 # Singleton
-static var _instance:GTraitsStorage
+static var _instance: GTraitsStorage
 
 #------------------------------------------
 # Godot override functions
@@ -61,7 +61,7 @@ static func get_instance() -> GTraitsStorage:
     return _instance
 
 ## Returns an [Array] of [Script] correspondinf to all object traits.
-func get_traits(object:Object) -> Array[Script]:
+func get_traits(object: Object) -> Array[Script]:
      # First, ensure that the traits storage is available
     if not object.has_meta(META_TRAIT_SCRIPTS):
         # Cast is necessary since an empty Array is not typed by default
@@ -73,10 +73,10 @@ func get_traits(object:Object) -> Array[Script]:
 
 ## Returns the trait instance for the given object. If trait is not found and [code]fail_if_not_found[/code]
 ## is [code]true[/code], an assertion error is raised, or else it will returns [code]null[/code].
-func get_trait_instance(object:Object, a_trait:Script, fail_if_not_found:bool = false) -> Object:
-    var trait_instance_meta_name:String = _get_trait_instance_meta_name(a_trait)
+func get_trait_instance(object: Object, a_trait: Script, fail_if_not_found: bool = false) -> Object:
+    var trait_instance_meta_name: String = _get_trait_instance_meta_name(a_trait)
     if object.has_meta(trait_instance_meta_name):
-        var traint_instance:Object = object.get_meta(trait_instance_meta_name)
+        var traint_instance: Object = object.get_meta(trait_instance_meta_name)
         assert(!fail_if_not_found || is_instance_valid(traint_instance), "Instance of trait '%s' not found or not valid" % GTraitsTypeOracle.get_instance().get_trait_info(a_trait).trait_name)
         return traint_instance
     else:
@@ -89,30 +89,30 @@ func get_trait_instance(object:Object, a_trait:Script, fail_if_not_found:bool = 
 ## By default, the trait instance is stored as it's own type. The trait instance can be stored
 ## as another triat type (to handle trait class hierarchy for example) by specifying the
 ## [code]as_trait[/code] parameter.
-func store_trait_instance(receiver:Object, trait_instance:Object, as_trait:Script = null) -> void:
+func store_trait_instance(receiver: Object, trait_instance: Object, as_trait: Script = null) -> void:
     if as_trait == null:
         as_trait = trait_instance.get_script()
     receiver.set_meta(_get_trait_instance_meta_name(as_trait), trait_instance)
 
 ## Add the trait instance to a trait container, if both trait instance and receiver are [Node] instances.
-func add_trait_to_container(receiver:Object, trait_instance:Object) -> void:
+func add_trait_to_container(receiver: Object, trait_instance: Object) -> void:
     # If both receiver and trait are Node instance, also add trait as a child of the receiver
     if trait_instance is Node and receiver is Node:
-        var scene_trait_container:Node = _get_scene_trait_container_for(receiver, trait_instance)
+        var scene_trait_container: Node = _get_scene_trait_container_for(receiver, trait_instance)
         scene_trait_container.add_child(trait_instance, true, Node.INTERNAL_MODE_BACK)
 
 ## Remove a trait from an object.
 ## [br][br]
 ## Trait instance is not accessible anymore from it's trait type, or super and sub types.
 ## It is also automatically freed.
-func remove_trait(a_trait:Script, receiver:Object) -> void:
-    var trait_instance:Object = get_trait_instance(receiver, a_trait)
+func remove_trait(a_trait: Script, receiver: Object) -> void:
+    var trait_instance: Object = get_trait_instance(receiver, a_trait)
     assert(trait_instance != null, "⚠️ Instance of trait '%s' not found" % GTraitsTypeOracle.get_instance().get_trait_info(a_trait).trait_name)
 
     # First, collect all trait that can be associated to the given trait : super classes and sub classes.
     # All must be removed from the object
-    var object_traits:Array[Script] = get_traits(receiver)
-    var traits_to_remove:Array[Script] = GTraitsTypeOracle.get_instance().filter_super_script_types_and_sub_script_types_of(object_traits, a_trait)
+    var object_traits: Array[Script] = get_traits(receiver)
+    var traits_to_remove: Array[Script] = GTraitsTypeOracle.get_instance().filter_super_script_types_and_sub_script_types_of(object_traits, a_trait)
 
     # Remove all traits from object, remove trait instance
     for trait_to_remove in traits_to_remove:
@@ -121,7 +121,7 @@ func remove_trait(a_trait:Script, receiver:Object) -> void:
 
     # If both receiver and trait are Node instance, also remove trait from receiver children
     if trait_instance is Node and receiver is Node:
-        var scene_trait_container:Node = _get_scene_trait_container_for(receiver, trait_instance)
+        var scene_trait_container: Node = _get_scene_trait_container_for(receiver, trait_instance)
         scene_trait_container.remove_child(trait_instance)
 
     # Free trait instance
@@ -131,8 +131,8 @@ func remove_trait(a_trait:Script, receiver:Object) -> void:
 # Private functions
 #------------------------------------------
 
-func _get_scene_trait_container_for(receiver:Node, trait_instance:Node) -> Node:
-    var container:Node = null
+func _get_scene_trait_container_for(receiver: Node, trait_instance: Node) -> Node:
+    var container: Node = null
 
     # First, try to find an already existing container
     var required_container_type: String = _get_base_type(trait_instance.get_script().get_instance_base_type())
@@ -179,7 +179,7 @@ func _get_base_type(type_name: String) -> String:
 func _get_trait_instance_meta_name(a_trait: Script) -> String:
     return META_TRAIT_INSTANCE_PREFIX + GTraitsTypeOracle.get_instance().get_trait_info(a_trait).trait_name + META_TRAIT_INSTANCE_SUFFIX
 
-func _free_trait_instance(trait_instance:Object) -> void:
+func _free_trait_instance(trait_instance: Object) -> void:
     if GTraitsTypeOracle.get_instance().is_object_instance_of("Node", trait_instance):
         trait_instance.queue_free()
     elif GTraitsTypeOracle.get_instance().is_object_instance_of("RefCounted", trait_instance):

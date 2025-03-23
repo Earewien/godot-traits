@@ -11,7 +11,7 @@ class_name GTraitsProjectSettings
 #------------------------------------------
 
 # Key to store the GTraitsRegistry autoload into settings
-const _PROJECT_SETTINGS_GTRAITS_REGISTRY_AUTOLOAD:String = "autoload/GTraitsRegistry"
+const _PROJECT_SETTINGS_GTRAITS_REGISTRY_AUTOLOAD: String = "autoload/GTraitsRegistry"
 
 #------------------------------------------
 # Signals
@@ -30,7 +30,7 @@ const _PROJECT_SETTINGS_GTRAITS_REGISTRY_AUTOLOAD:String = "autoload/GTraitsRegi
 #------------------------------------------
 
 # Singleton
-static var _instance:GTraitsProjectSettings
+static var _instance: GTraitsProjectSettings
 
 #------------------------------------------
 # Godot override functions
@@ -49,8 +49,8 @@ static func get_instance() -> GTraitsProjectSettings:
 ## Declare or update [code]GTraitsRegistry[/code] autoload autoload in Project Settings
 func update_gtraits_registry_autoload() -> void:
     # The star '*' means Autoload enabled"
-    var autoload_path:String = "*%s" % GTraitsEditorSettings.get_instance().get_gtraits_registry_helper_output_path()
-    var previous_autoload_path:String = ProjectSettings.get_setting(_PROJECT_SETTINGS_GTRAITS_REGISTRY_AUTOLOAD, "")
+    var autoload_path: String = "*%s" % GTraitsEditorSettings.get_instance().get_gtraits_registry_helper_output_path()
+    var previous_autoload_path: String = ProjectSettings.get_setting(_PROJECT_SETTINGS_GTRAITS_REGISTRY_AUTOLOAD, "")
     if previous_autoload_path != autoload_path:
         ProjectSettings.set_setting(_PROJECT_SETTINGS_GTRAITS_REGISTRY_AUTOLOAD, autoload_path)
         ProjectSettings.save()

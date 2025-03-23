@@ -9,4 +9,4 @@ _Godot Traits_ can detect such cyclic dependencies and warn the developer about 
 ## Technical elements
 
 - `main.tscn` : scene to run. The main scene try to add `Cyclic1` trait, but this trait can not be instantiated due to
-cyclic depdencies. An assertion error will be raised.
+  cyclic depdencies. An assertion error will be raised.

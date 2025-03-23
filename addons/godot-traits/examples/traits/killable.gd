@@ -18,13 +18,13 @@ extends RefCounted
 # Public variables
 #------------------------------------------
 
-var is_killed:bool = false
+var is_killed: bool = false
 
 #------------------------------------------
 # Private variables
 #------------------------------------------
 
-var _loggable:Loggable
+var _loggable: Loggable
 
 #------------------------------------------
 # Godot override functions
@@ -33,7 +33,7 @@ var _loggable:Loggable
 # Loggable trait will automatically be constructed, registered into receiver and injected into
 # this constructor, unless receiver already has a Loggable trait, in this case the existing trait
 # will be directly injected
-func _init(loggable:Loggable) -> void:
+func _init(loggable: Loggable) -> void:
     _loggable = loggable
 
 #------------------------------------------
@@ -48,4 +48,3 @@ func kill() -> void:
 #------------------------------------------
 # Private functions
 #------------------------------------------
-

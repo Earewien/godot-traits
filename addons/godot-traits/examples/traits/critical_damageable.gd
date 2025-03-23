@@ -40,5 +40,5 @@ func _notification(what: int) -> void:
 # Private functions
 #------------------------------------------
 
-func _compute_amount_of_damage(initial_amount:int) -> int:
+func _compute_amount_of_damage(initial_amount: int) -> int:
     return initial_amount * 2

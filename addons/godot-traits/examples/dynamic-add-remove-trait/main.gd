@@ -20,7 +20,7 @@ extends Node2D
 # Private variables
 #------------------------------------------
 
-var _ellapsed_time:float
+var _ellapsed_time: float
 var _npc
 
 #------------------------------------------
@@ -35,7 +35,7 @@ func _process(delta: float) -> void:
 
     if _ellapsed_time > 1:
         _ellapsed_time = 0
-        GTraits.if_is_damageable(_npc, func(damageable:Damageable): damageable.take_damage(5))
+        GTraits.if_is_damageable(_npc, func(damageable: Damageable): damageable.take_damage(5))
         # Can also be write as:
         #if GTraits.is_damageable(_npc):
             #GTraits.as_damageable(_npc).take_damage(1)
@@ -58,4 +58,3 @@ func _on_incibility_timer_timeout() -> void:
     #else:
         ## Is not critical anymore !
         #GTraits.set_damageable(_npc)
-

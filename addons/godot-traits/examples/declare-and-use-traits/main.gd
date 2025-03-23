@@ -20,8 +20,8 @@ extends Node2D
 # Private variables
 #------------------------------------------
 
-var _ellapsed_time:float = 0
-var _npc:Node2D
+var _ellapsed_time: float = 0
+var _npc: Node2D
 
 #------------------------------------------
 # Godot override functions
@@ -43,4 +43,3 @@ func _process(delta: float) -> void:
 #------------------------------------------
 # Private functions
 #------------------------------------------
-

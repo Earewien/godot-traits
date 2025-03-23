@@ -7,7 +7,7 @@ handled by `GTraits` system, or fail if something is not possible (cyclic depend
 ## Technical elements
 
 - `main.tscn` : scene to run. The main scene instantiates a unique NPC, apply damages to him. It automatically
-dies when it runs out of health.
+  dies when it runs out of health.
 - `npc.gd` : a very simple NPC that as the `GTraitsCoreExampleKillable`, GTraitsCoreExampleHealthable` 
-and GTraitsCoreExampleDamageable` traits. Since each trait depends to the previous one, trait order 
-declaration in NPC is important !
+and GTraitsCoreExampleDamageable` traits. Since each trait depends to the previous one, trait order
+  declaration in NPC is important !

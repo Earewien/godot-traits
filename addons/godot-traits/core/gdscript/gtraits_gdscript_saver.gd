@@ -27,7 +27,7 @@ class_name GTraitsGDScriptSaver
 #------------------------------------------
 
 # Logger
-var _logger:GTraitsLogger = GTraitsLogger.new("gtraits_trait_build")
+var _logger: GTraitsLogger = GTraitsLogger.new("gtraits_trait_build")
 
 #------------------------------------------
 # Godot override functions
@@ -39,8 +39,8 @@ var _logger:GTraitsLogger = GTraitsLogger.new("gtraits_trait_build")
 
 ## Saves script code into a file and returns the created [Script] instance.
 ## If the script already exists, content is replaced.
-func save(script_path:String, script_content:String) -> Script:
-    var script:Script = _get_or_create_script(script_path)
+func save(script_path: String, script_content: String) -> Script:
+    var script: Script = _get_or_create_script(script_path)
 
     # Check for changed before forcing a full save
     if script.source_code == script_content:
@@ -69,8 +69,8 @@ func save(script_path:String, script_content:String) -> Script:
 # Private functions
 #------------------------------------------
 
-func _get_or_create_script(script_path:String) -> Script:
-    var script:Script
+func _get_or_create_script(script_path: String) -> Script:
+    var script: Script
 
     if FileAccess.file_exists(script_path):
         script = load(script_path)
@@ -80,8 +80,8 @@ func _get_or_create_script(script_path:String) -> Script:
 
     return script
 
-func _do_save_script(script:Script, script_path:String) -> void:
-    var saver_flag:int = ResourceSaver.FLAG_NONE
+func _do_save_script(script: Script, script_path: String) -> void:
+    var saver_flag: int = ResourceSaver.FLAG_NONE
     if script.resource_path != script_path:
         script.resource_path = script_path
         saver_flag = ResourceSaver.FLAG_CHANGE_PATH

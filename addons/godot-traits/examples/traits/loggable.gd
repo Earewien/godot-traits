@@ -22,7 +22,7 @@ extends RefCounted
 # Private variables
 #------------------------------------------
 
-var _log_context:String
+var _log_context: String
 
 #------------------------------------------
 # Godot override functions
@@ -36,10 +36,9 @@ func _init(receiver) -> void:
 # Public functions
 #------------------------------------------
 
-func log(message:String) -> void:
+func log(message: String) -> void:
     print("%s| %s" % [_log_context, message])
 
 #------------------------------------------
 # Private functions
 #------------------------------------------
-

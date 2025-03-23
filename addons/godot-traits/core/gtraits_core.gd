@@ -70,18 +70,18 @@ class_name GTraitsCore
 ## [br][br]
 ## If the [code]scene_path[/code] is not empty, the trait is registered as a [i]Scene trait[/i]. When
 ## used, the scene will be instantiated instead of the trait script.
-static func register_trait(a_trait:Script, a_trait_name:String, scene_path:String = "") -> void:
+static func register_trait(a_trait: Script, a_trait_name: String, scene_path: String = "") -> void:
     GTraitsTypeOracle.get_instance().register_trait(a_trait, a_trait_name, scene_path)
 
 ## Returns [code]true[/code] if an object has a given trait, [code]false[/code] otherwise.
-static func is_a(a_trait:Script, object:Object) -> bool:
+static func is_a(a_trait: Script, object: Object) -> bool:
     if not is_instance_valid(object):
         return false
     return is_instance_valid(GTraitsStorage.get_instance().get_trait_instance(object, a_trait))
 
 ## Add a trait to the given object and returns the instantiated trait. If trait already exists in
 ## the object, it is immediatly returned.
-static func add_trait_to(a_trait:Script, object:Object) -> Object:
+static func add_trait_to(a_trait: Script, object: Object) -> Object:
     assert(is_instance_valid(a_trait), "Trait must be a valid script (noll null or freed)")
     assert(is_instance_valid(object), "Object must be a valid object (noll null or freed)")
 
@@ -89,8 +89,8 @@ static func add_trait_to(a_trait:Script, object:Object) -> Object:
     # - trait already exists in this object (multiple call to add_trait_to): retrieve
     # already instantiated trait
     # - trait does not exist: instantiate it, add it to the object
-    var trait_instance:Object
-    var object_traits:Array[Script] = GTraitsStorage.get_instance().get_traits(object)
+    var trait_instance: Object
+    var object_traits: Array[Script] = GTraitsStorage.get_instance().get_traits(object)
     if object_traits.has(a_trait):
         # If object already has the trait, instance must be present ! If not, there is an issue
         trait_instance = GTraitsStorage.get_instance().get_trait_instance(object, a_trait, true)
@@ -103,12 +103,12 @@ static func add_trait_to(a_trait:Script, object:Object) -> Object:
 
 ## Remove a trait from the given object and returns it. Removed trait is automatically freed from memory.
 ## If trait is not available in the given object, an assertion error will be raised.
-static func remove_trait_from(a_trait:Script, object:Object) -> void:
+static func remove_trait_from(a_trait: Script, object: Object) -> void:
     GTraitsStorage.get_instance().remove_trait(a_trait, object)
 
 ## Returns the trait instance for the given object. If this object does not have this trait,
 ## an assertion error will be raised.
-static func as_a(a_trait:Script, object:Object) -> Object:
+static func as_a(a_trait: Script, object: Object) -> Object:
     return GTraitsStorage.get_instance().get_trait_instance(object, a_trait, true)
 
 ## Calls the given [Callable] if and only if an object has a given trait. The callable
@@ -119,8 +119,8 @@ static func as_a(a_trait:Script, object:Object) -> Object:
 ## the returned value will always be [code]null[/code].
 ## [br][br]
 ## See [method GTraitsCore.is_a] for more details about trait testing.
-static func if_is_a(a_trait:Script, object:Object, if_callable:Callable, deferred_call:bool = false) -> Variant:
-    var trait_instance:Object = GTraitsStorage.get_instance().get_trait_instance(object, a_trait)
+static func if_is_a(a_trait: Script, object: Object, if_callable: Callable, deferred_call: bool = false) -> Variant:
+    var trait_instance: Object = GTraitsStorage.get_instance().get_trait_instance(object, a_trait)
     if trait_instance != null:
         assert(if_callable.is_valid(), "Callable must be valid")
         if deferred_call:
@@ -138,8 +138,8 @@ static func if_is_a(a_trait:Script, object:Object, if_callable:Callable, deferre
 ## the returned value will always be [code]null[/code].
 ## [br][br]
 ## See [method GTraitsCore.is_a] for more details about trait testing.
-static func if_is_a_or_else(a_trait:Script, object:Object, if_callable:Callable, else_callable:Callable, deferred_call:bool = false) -> Variant:
-    var trait_instance:Object = GTraitsStorage.get_instance().get_trait_instance(object, a_trait)
+static func if_is_a_or_else(a_trait: Script, object: Object, if_callable: Callable, else_callable: Callable, deferred_call: bool = false) -> Variant:
+    var trait_instance: Object = GTraitsStorage.get_instance().get_trait_instance(object, a_trait)
     if trait_instance != null:
         assert(if_callable.is_valid(), "Callable must be valid")
         if deferred_call:
@@ -158,4 +158,3 @@ static func if_is_a_or_else(a_trait:Script, object:Object, if_callable:Callable,
 #------------------------------------------
 # Private functions
 #------------------------------------------
-
