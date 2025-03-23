@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://dqpka358gvk8y"]
 
-[ext_resource type="Script" uid="uid://3r0lg2kioe0v" path="res://addons/godot-traits/examples/traits/labelled.gd" id="1_q0fkn"]
+[ext_resource type="Script" uid="uid://b67y8oe7nf4om" path="res://addons/godot-traits/examples/traits/labelled.gd" id="1_q0fkn"]
 
 [node name="Labelled" type="Label"]
 offset_right = 1.0

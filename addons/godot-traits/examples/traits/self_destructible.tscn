@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://eddvhrjay5l5"]
 
-[ext_resource type="Script" path="res://addons/godot-traits/examples/traits/self_destructible.gd" id="1_41hmq"]
+[ext_resource type="Script" uid="uid://bfj86xh3l4m6t" path="res://addons/godot-traits/examples/traits/self_destructible.gd" id="1_41hmq"]
 
 [sub_resource type="Gradient" id="Gradient_l37ep"]
 offsets = PackedFloat32Array(0, 0.125402, 0.572347, 0.919614, 1)

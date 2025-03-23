@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://dl4ctcx2ga1dr"]
 
-[ext_resource type="Script" path="res://addons/godot-traits/core/container/gtraits_container.gd" id="1_lt0fc"]
+[ext_resource type="Script" uid="uid://dl8jqx3mg27uy" path="res://addons/godot-traits/core/container/gtraits_container.gd" id="1_lt0fc"]
 
 [node name="GTraitsContainer" type="Node"]
 script = ExtResource("1_lt0fc")

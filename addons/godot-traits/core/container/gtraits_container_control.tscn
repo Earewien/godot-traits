@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://guwnogl4klf"]
 
-[ext_resource type="Script" path="res://addons/godot-traits/core/container/gtraits_container_control.gd" id="1_y62w4"]
+[ext_resource type="Script" uid="uid://5316wm311ln" path="res://addons/godot-traits/core/container/gtraits_container_control.gd" id="1_y62w4"]
 
 [node name="GTraitsContainerControl" type="Control"]
 layout_mode = 3
