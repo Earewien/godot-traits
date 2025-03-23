@@ -1,9 +1,9 @@
-@icon("res://addons/godot-traits/core/container/gtraits_container_icon_ui.svg")
-class_name GTraitsContainerUI
+@icon("res://addons/godot-traits/core/container/gtraits_container_icon_control.svg")
+class_name GTraitsContainerControl
 extends GTraitsContainer
 
 ##
-## Trait container for UI scene traits, allowing to declare scene traits directly in [i]Godot Editor[/i].
+## Trait container for Control scene traits, allowing to declare scene traits directly in [i]Godot Editor[/i].
 ##
 ## See [GTraitsContainer] for documentation.
 ##

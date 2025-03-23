@@ -1,8 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://guwnogl4klf"]
-
-[ext_resource type="Script" path="res://addons/godot-traits/core/container/gtraits_container_ui.gd" id="1_y62w4"]
-
-[node name="GTraitsContainerUI" type="Control"]
-layout_mode = 3
-anchors_preset = 0
-script = ExtResource("1_y62w4")

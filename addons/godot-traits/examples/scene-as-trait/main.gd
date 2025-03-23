@@ -31,6 +31,9 @@ func _ready() -> void:
         GTraits.unset_self_destructible(_heart)
         _heart.queue_free())
 
+    # Scene trait can also be declared directly in code
+    GTraits.set_labelled(_heart).text = "Boom !"
+
 #------------------------------------------
 # Public functions
 #------------------------------------------
