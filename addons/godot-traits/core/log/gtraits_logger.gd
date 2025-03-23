@@ -11,7 +11,7 @@ class_name GTraitsLogger
 #------------------------------------------
 
 ## Logging level
-enum Level {
+enum GTraitsLoggerLevel {
     DEBUG,
     INFO,
     WARN,
@@ -30,8 +30,8 @@ enum Level {
 # Public variables
 #------------------------------------------
 
-## Current logging level, see [enum GTraitsLogger.Level]
-var log_level: Level = Level.WARN
+## Current logging level, see [enum GTraitsLogger.GTraitsLoggerLevel]
+var log_level: GTraitsLoggerLevel = GTraitsLoggerLevel.WARN
 
 #------------------------------------------
 # Private variables
@@ -43,7 +43,7 @@ var _context: String
 # Godot override functions
 #------------------------------------------
 
-func _init(context: String, level: Level = Level.INFO) -> void:
+func _init(context: String, level: GTraitsLoggerLevel = GTraitsLoggerLevel.INFO) -> void:
     _context = context.substr(0, 20).rpad(20)
     log_level = level
 
@@ -52,20 +52,21 @@ func _init(context: String, level: Level = Level.INFO) -> void:
 #------------------------------------------
 
 func debug(callable: Callable) -> void:
-    if log_level <= Level.DEBUG:
+    if log_level <= GTraitsLoggerLevel.DEBUG:
         print("[%s][DEBUG] %s" % [_context, callable.call()])
 
 func info(callable: Callable) -> void:
-    if log_level <= Level.INFO:
+    if log_level <= GTraitsLoggerLevel.INFO:
         print("[%s][INFO ] %s" % [_context, callable.call()])
 
 func warn(callable: Callable) -> void:
-    if log_level <= Level.WARN:
+    if log_level <= GTraitsLoggerLevel.WARN:
         print("[%s][WARN ] %s" % [_context, callable.call()])
 
 func error(callable: Callable) -> void:
-    if log_level <= Level.INFO:
+    if log_level <= GTraitsLoggerLevel.INFO:
         printerr("[%s][ERROR] %s" % [_context, callable.call()])
+
 #------------------------------------------
 # Private functions
 #------------------------------------------
