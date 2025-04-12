@@ -12,6 +12,7 @@ config_version=5
 
 config/name="Godot-Traits"
 config/features=PackedStringArray("4.4", "GL Compatibility")
+config/icon="uid://kqvwiwajrsys"
 
 [autoload]
 
@@ -19,7 +20,7 @@ GTraitsRegistry="*res://gtraits/helper/gtraits_registry.gd"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/godot-traits/plugin.cfg", "res://addons/script-ide/plugin.cfg")
+enabled=PackedStringArray("res://addons/godot-traits/plugin.cfg")
 
 [rendering]
 

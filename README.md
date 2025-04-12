@@ -1,10 +1,10 @@
-[![Discord Banner](https://discordapp.com/api/guilds/1067685170397855754/widget.png?style=banner2)](https://discord.gg/SWg6vgcw3F)
+<p align="center">
+    <img src="addons/godot-traits/documentation//assets/banner.png" width="768" alt="banner" />
+</p>
 
-# Godot Traits
+[![Discord Shield](https://discord.com/api/guilds/1067685170397855754/widget.png?style=shield)](https://discord.gg/SWg6vgcw3F)
 
 A powerful trait system for [Godot Engine](https://godotengine.org/), making composition and behavior reuse effortless.
-
-![image](addons/godot-traits/documentation/assets/addon-icon.png)
 
 ## 📖 Overview
 
@@ -12,21 +12,22 @@ Godot Traits is an addon that brings the power of traits to GDScript. A _trait_ 
 
 While Godot Engine doesn't have a native interface system, developers often use composition to combine different behaviors in a single class. However, implementing composition correctly can be complex and inconsistent. This addon provides a streamlined and intuitive approach for adding and removing behaviors from objects in Godot by defining trait classes and attaching them to objects, with auto-generated utilities for easy usage.
 
-## 🎯 Compatibility
+## 🔧 Installation
 
-The stable version (_1.x_) is compatible with Godot 4.4 and above. For users on older Godot Engine versions, the _0.x_ releases are available for manual download. If you need specific features not present in legacy versions, please feel free to open a backport request on our issue tracker.
+1. Clone or download this repository
+2. Copy the `addons/godot-traits` folder into your project's `addons` directory
+3. Enable the plugin in Project Settings > Plugins
+4. Restart the editor
 
-## 🗺️ Roadmap
+## 📚 Common Use Cases
 
-- [x] Core trait system
-- [x] Automatic multi-trait dependency injection
-- [x] Automatic dependent trait declaration and creation
-- [x] Generation of helper scripts for strong typing and code completion in editor
-- ~~[ ] Inline traits into scripts using the `@inline_trait(TheTraitName)` annotation~~ (Requires extensive lexer/parser/AST implementation)
-- [x] Helper methods for conditional trait-based code execution
-- [x] Trait instantiation optimization (caching trait instantiation info)
-- [x] Automatic cleanup of unused trait dependencies upon removal
-- [ ] Project traits (boosted Autoloads)
+Godot Traits can be applied to various game development scenarios:
+
+- **Component-based entities**: Create entity objects with multiple behavior traits
+- **UI extensions**: Enhance UI nodes with reusable interaction traits
+- **Game mechanics**: Implement reusable mechanics like health, inventory, or movement
+- **AI behaviors**: Share AI routines across different enemy types
+- **Plugin development**: Create traits that can be applied to any project node
 
 ## 🚀 Quick Start
 
@@ -100,20 +101,26 @@ This example demonstrates:
 - Dynamic trait addition to objects
 - Type-safe trait usage with code completion
 
+## 🎯 Compatibility
+
+The stable version (_1.x_) is compatible with Godot 4.4 and above. For users on older Godot Engine versions, the _0.x_ releases are available for manual download. If you need specific features not present in legacy versions, please feel free to open a backport request on our issue tracker.
+
 ## 📄 Examples
 
 Comprehensive usage examples are available in the `addons/godot-traits/examples` folders. Each example includes a detailed `README` file explaining its concept.
 
 ## ✨ Features
 
-| **In-editor**                                                                             | **Runtime**                                                                           |
-| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| 🔑 [Trait declaration using annotation](#-trait-declaration-using-annotation)             | 🔑 [Trait instance automatic lifecycle](#-trait-instance-automatic-lifecycle)         |
-| 🔑 [Auto-generated trait helper class](#-auto-generated-trait-helper-class)               | 🔑 [Scene as trait](#-scene-as-trait)                                                 |
-| 🔑 [Strongly-typed traits and autocompletion](#-strongly-typed-traits-and-autocompletion) | 🔑 [Dynamic trait management](#-dynamic-trait-management)                             |
+Godot Traits provides a comprehensive set of features for trait-based programming in Godot:
+
+|                                  **In-editor Features**                                   |                                 **Runtime Features**                                  |
+| :---------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------: |
+|       🔑 [Trait declaration using annotation](#-trait-declaration-using-annotation)       |     🔑 [Trait instance automatic lifecycle](#-trait-instance-automatic-lifecycle)     |
+|        🔑 [Auto-generated trait helper class](#-auto-generated-trait-helper-class)        |                         🔑 [Scene as trait](#-scene-as-trait)                         |
+| 🔑 [Strongly-typed traits and autocompletion](#-strongly-typed-traits-and-autocompletion) |               🔑 [Dynamic trait management](#-dynamic-trait-management)               |
 |                                                                                           | 🔑 [Automatic trait dependencies injection](#-automatic-trait-dependencies-injection) |
-|                                                                                           | 🔑 [Traits inheritance](#-traits-inheritance)                                         |
-|                                                                                           | 🔑 [Strong trait usage runtime checks](#-strong-trait-usage-runtime-checks)           |
+|                                                                                           |                     🔑 [Traits inheritance](#-traits-inheritance)                     |
+|                                                                                           |      🔑 [Strong trait usage runtime checks](#-strong-trait-usage-runtime-checks)      |
 
 ### ➡️ In-editor Features
 
@@ -543,3 +550,19 @@ func _ready() -> void:
     # Always true
     assert(GTraits.as_critical_damageable(crate) == GTraits.as_damageable(crate))
 ```
+
+## 🗺️ Roadmap
+
+- [x] Core trait system
+- [x] Automatic multi-trait dependency injection
+- [x] Automatic dependent trait declaration and creation
+- [x] Generation of helper scripts for strong typing and code completion in editor
+- ~~[ ] Inline traits into scripts using the `@inline_trait(TheTraitName)` annotation~~ (Requires extensive lexer/parser/AST implementation)
+- [x] Helper methods for conditional trait-based code execution
+- [x] Trait instantiation optimization (caching trait instantiation info)
+- [x] Automatic cleanup of unused trait dependencies upon removal
+- [ ] Project traits (boosted Autoloads)
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
