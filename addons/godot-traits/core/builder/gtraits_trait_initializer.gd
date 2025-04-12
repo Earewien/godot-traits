@@ -36,7 +36,7 @@ class TypedParameter extends Parameter:
                 assert(false, "⚠️ Trait '%s' can not be found in project." % param_type_name)
                 return null
 
-            var trait_instance: Object = builder.instantiate_trait(param_type, receiver)
+            var trait_instance: Object = builder.instantiate_trait(param_type, receiver, false)
             if not is_instance_valid(trait_instance):
                 assert(false, "⚠️ Unable to instantiate trait '%s'." % param_type_name)
                 return null
@@ -94,7 +94,7 @@ func has_no_parameters() -> bool:
     return parameter_types.is_empty()
 
 ## Invokes this initializer, and returns an initialized trait instance.
-func invoke(builder: GTraitsTraitBuilder, receiver: Object, trait_instance: Object) -> Object:
+func invoke(builder: GTraitsTraitBuilder, receiver: Object, trait_instance: Object, is_top_level: bool) -> Object:
     # Before invoking, if trait instance is not null and _initialize is the initializer, check that the instance
     # has not been already initialized. Can occurs when using GTraitsContainer, we can't know if the child is added
     # from the editor (need to be initialized) or is added through GTraitsCore
@@ -119,13 +119,16 @@ func invoke(builder: GTraitsTraitBuilder, receiver: Object, trait_instance: Obje
         if trait_info.is_scene_trait():
             return ResourceLoader.load(trait_info.trait_scene_path, "PackedScene").instantiate()
         else:
-            return the_trait.new.callv(parameter_instances)
+            trait_instance = the_trait.new.callv(parameter_instances)
+            _set_trait_instance_dependencies(receiver, trait_instance, parameter_instances, is_top_level)
+            return trait_instance
     else: # _initialize
         if trait_instance == null:
             assert(false, "⚠️ Can not invoke _initialize function on null instance of '%s' trait" % trait_info.trait_name)
             return null
         if exists:
             trait_instance._initialize.callv(parameter_instances)
+            _set_trait_instance_dependencies(receiver, trait_instance, parameter_instances, is_top_level)
         # Tag this trait instance as initialized: to avoid multiple initialization in the future
         trait_instance.set_meta("__trait_initialized__", true)
 
@@ -134,3 +137,8 @@ func invoke(builder: GTraitsTraitBuilder, receiver: Object, trait_instance: Obje
 #------------------------------------------
 # Private functions
 #------------------------------------------
+
+func _set_trait_instance_dependencies(receiver: Object, trait_instance: Object, params: Array[Object], is_top_level: bool) -> void:
+    for param in params:
+        if param != receiver:
+            GTraitsStorage.get_instance().set_trait_dependency_of(param, trait_instance, is_top_level)

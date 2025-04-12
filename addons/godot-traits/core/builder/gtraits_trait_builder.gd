@@ -41,14 +41,16 @@ var _logger: GTraitsLogger = GTraitsLogger.new("gtraits_trait_build")
 
 ## Retuns the trait for the given receiver. If the trait already exists, it is just returned. Otherwise,
 ## it is instantiated, registered into the receiver and returned.
-func instantiate_trait(a_trait: Script, receiver: Object) -> Object:
-    return _instantiate_trait(a_trait, receiver)
+## [br][br]
+## [b]is_top_level[/b] is used to specify if the trait is a top level trait or not.
+func instantiate_trait(a_trait: Script, receiver: Object, is_top_level: bool = true) -> Object:
+    return _instantiate_trait(a_trait, receiver, is_top_level)
 
 #------------------------------------------
 # Private functions
 #------------------------------------------
 
-func _instantiate_trait(a_trait: Script, receiver: Object) -> Object:
+func _instantiate_trait(a_trait: Script, receiver: Object, is_top_level: bool) -> Object:
     # Check if this is an actual trait
     if not GTraitsTypeOracle.get_instance().is_trait(a_trait):
         assert(false, "⚠️ Type '%s' is not a trait and can not be automatically instantiated" % GTraitsTypeOracle.get_instance().get_script_class_name(a_trait))
@@ -68,14 +70,14 @@ func _instantiate_trait(a_trait: Script, receiver: Object) -> Object:
     # If receiver already has the given trait, return it immediatly, else try to instantiate it
     var trait_instance: Object = GTraitsStorage.get_instance().get_trait_instance(receiver, a_trait)
     if not is_instance_valid(trait_instance):
-        trait_instance = _instantiate_trait_for_receiver(a_trait, receiver)
+        trait_instance = _instantiate_trait_for_receiver(a_trait, receiver, is_top_level)
 
     # This trait has been handled, so we can pop it out
     _encoutered_traits.pop_back()
 
     return trait_instance
 
-func _instantiate_trait_for_receiver(a_trait: Script, receiver: Object) -> Object:
+func _instantiate_trait_for_receiver(a_trait: Script, receiver: Object, is_top_level: bool) -> Object:
     var trait_info: GTraitsTypeOracle.TraitInfo = GTraitsTypeOracle.get_instance().get_trait_info(a_trait)
     assert(trait_info != null, "Should never occur !")
     assert(a_trait.can_instantiate(), "⚠️ Trait '%s' can not be instantiated" % trait_info.trait_name)
@@ -93,11 +95,11 @@ func _instantiate_trait_for_receiver(a_trait: Script, receiver: Object) -> Objec
     if initialize_initializer.exists and init_initializer.has_parameters() and initialize_initializer.has_parameters():
         assert(false, "⚠️ Both _init and _initialize functions are declared with parameters in trait '%s'. Can no instantiate trait." % trait_info.trait_name)
         return null
- 
+
     # Instantiate trait and save it into the receiver trait instances storage
     var trait_storage: GTraitsStorage = GTraitsStorage.get_instance()
-    var trait_instance: Object = init_initializer.invoke(self, receiver, null)
-    trait_instance = initialize_initializer.invoke(self, receiver, trait_instance)
+    var trait_instance: Object = init_initializer.invoke(self, receiver, null, is_top_level)
+    trait_instance = initialize_initializer.invoke(self, receiver, trait_instance, is_top_level)
     trait_storage.store_trait_instance(receiver, trait_instance, a_trait)
 
     # If trait has parent classes, to prevent to create new trait instance if parent classes are asked for this

@@ -70,8 +70,11 @@ class_name GTraitsCore
 ## [br][br]
 ## If the [code]scene_path[/code] is not empty, the trait is registered as a [i]Scene trait[/i]. When
 ## used, the scene will be instantiated instead of the trait script.
-static func register_trait(a_trait: Script, a_trait_name: String, scene_path: String = "") -> void:
-    GTraitsTypeOracle.get_instance().register_trait(a_trait, a_trait_name, scene_path)
+## [br][br]
+## If [code]on_destroy_destroy_dependencies[/code] is [code]true[/code], the trait will destroy its dependencies
+## when it is destroyed.
+static func register_trait(a_trait: Script, a_trait_name: String, on_destroy_destroy_dependencies: bool = true, scene_path: String = "") -> void:
+    GTraitsTypeOracle.get_instance().register_trait(a_trait, a_trait_name, on_destroy_destroy_dependencies, scene_path)
 
 ## Returns [code]true[/code] if an object has a given trait, [code]false[/code] otherwise.
 static func is_a(a_trait: Script, object: Object) -> bool:

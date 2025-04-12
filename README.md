@@ -25,8 +25,7 @@ The stable version (_1.x_) is compatible with Godot 4.4 and above. For users on 
 - ~~[ ] Inline traits into scripts using the `@inline_trait(TheTraitName)` annotation~~ (Requires extensive lexer/parser/AST implementation)
 - [x] Helper methods for conditional trait-based code execution
 - [x] Trait instantiation optimization (caching trait instantiation info)
-- [ ] Automatic cleanup of unused trait dependencies upon removal
-- [ ] Mixins (group of traits)
+- [x] Automatic cleanup of unused trait dependencies upon removal
 - [ ] Project traits (boosted Autoloads)
 
 ## 🚀 Quick Start
@@ -437,6 +436,46 @@ func _init() -> void:
     assert(GTraits.is_damageable(crate), "It is Damageable!")
     assert(GTraits.is_loggable(crate), "It is Loggable too!")
     assert(GTraits.is_healthable(crate), "It is Healthable too!")
+```
+
+Godot Traits provides fine-grained control over dependency lifecycle management. By default, when a trait is removed from a receiver, its injected dependencies are automatically cleaned up, unless they were explicitly added or are still required by other traits.
+
+This behavior can be customized using the `on_destroy` annotation parameter, which accepts two values:
+
+- `destroy_dependencies` (default): Automatically remove injected dependencies when the trait is destroyed
+- `keep_dependencies`: Retain all dependencies in the receiver even after trait removal
+
+Here's an example demonstrating both behaviors:
+
+```gdscript
+#####
+# File damageable1.gd
+#####
+# @trait(on_destroy=destroy_dependencies)
+class_name Damageable1
+
+var _healthable: Healthable
+var _loggable: Loggable
+
+func _init(healthable: Healthable, loggable: Loggable) -> void:
+    _healthable = healthable
+    _loggable = loggable
+    # Those dependencies will be removed from the receiver when the Damageable1 trait is removed
+
+#####
+# File damageable2.gd
+#####
+
+# @trait(on_destroy=keep_dependencies)
+class_name Damageable2
+
+var _healthable: Healthable
+var _loggable: Loggable
+
+func _init(healthable: Healthable, loggable: Loggable) -> void:
+    _healthable = healthable
+    _loggable = loggable
+    # Those dependencies will remains into the receiver even if Damageable2 trait is removed
 ```
 
 ##### 📜 Dependency Injection Rules

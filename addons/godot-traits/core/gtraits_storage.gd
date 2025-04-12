@@ -23,9 +23,25 @@ const META_TRAIT_INSTANCE_PREFIX: String = "__trait_"
 ## Meta object is an [Object]
 const META_TRAIT_INSTANCE_SUFFIX: String = "__"
 
+## Meta key for trait script
+## Meta object is a [Script]
+const META_TRAIT_SCRIPT_OBJECT: String = "__trait_script_object__"
+
 ## Meta key for scene trait containers type
 ## Meta object is a [String]: Node, Node2D or Node3D
 const META_KEY_CONTAINER_TYPE: String = "__trait_container_type__"
+
+## Meta key for top level trait property
+## Meta object is a [bool]
+const META_TOP_LEVEL_TRAIT_PROPERTY: String = "__trait_top_level__"
+
+## Meta key to store the parent dependencies of a trait
+## Meta object is an [Dictionary] of [WeakRef] as keys and [bool] as values
+const META_DEPENDENCIES_PROPERTY: String = "__trait_dependencies__"
+
+## Meta key to store the parent dependencies of a trait
+## Meta object is an [Dictionary] of [WeakRef] as keys and [bool] as values
+const META_DEPENDENCY_OF_PROPERTY: String = "__trait_dependency_of__"
 
 #------------------------------------------
 # Signals
@@ -93,6 +109,10 @@ func store_trait_instance(receiver: Object, trait_instance: Object, as_trait: Sc
     if as_trait == null:
         as_trait = trait_instance.get_script()
     receiver.set_meta(_get_trait_instance_meta_name(as_trait), trait_instance)
+    # Also store the trait script object into the trait instance, it will be necessary if trait is not top level trait
+    # and is auto removed when removing another trait
+    if not trait_instance.has_meta(META_TRAIT_SCRIPT_OBJECT):
+        trait_instance.set_meta(META_TRAIT_SCRIPT_OBJECT, as_trait)
 
 ## Add the trait instance to a trait container, if both trait instance and receiver are [Node] instances.
 func add_trait_to_container(receiver: Object, trait_instance: Object) -> void:
@@ -125,7 +145,39 @@ func remove_trait(a_trait: Script, receiver: Object) -> void:
         scene_trait_container.remove_child(trait_instance)
 
     # Free trait instance
-    _free_trait_instance(trait_instance)
+    _free_trait_instance(receiver, trait_instance)
+
+## Set the dependency of a trait.
+## [br][br]
+## This function is used to update the dependency of a trait when it is added to an object.
+func set_trait_dependency_of(trait_instance: Object, dependency_of: Object, is_dependency_of_top_level: bool) -> void:
+    # Create meta properties if needed, trait instance may already exists
+    if not dependency_of.has_meta(META_DEPENDENCIES_PROPERTY):
+        dependency_of.set_meta(META_DEPENDENCIES_PROPERTY, {})
+    if not dependency_of.has_meta(META_DEPENDENCY_OF_PROPERTY):
+        dependency_of.set_meta(META_DEPENDENCY_OF_PROPERTY, {})
+    if not dependency_of.has_meta(META_TOP_LEVEL_TRAIT_PROPERTY):
+        dependency_of.set_meta(META_TOP_LEVEL_TRAIT_PROPERTY, is_dependency_of_top_level)
+
+    if not trait_instance.has_meta(META_DEPENDENCIES_PROPERTY):
+        trait_instance.set_meta(META_DEPENDENCIES_PROPERTY, {})
+    if not trait_instance.has_meta(META_DEPENDENCY_OF_PROPERTY):
+        trait_instance.set_meta(META_DEPENDENCY_OF_PROPERTY, {})
+    if not trait_instance.has_meta(META_TOP_LEVEL_TRAIT_PROPERTY):
+        trait_instance.set_meta(META_TOP_LEVEL_TRAIT_PROPERTY, dependency_of == null)
+
+    # Set if this trait is a dependency of another trait or not, and so if it is a top level trait or not
+    # This will be necessary to know if we can remove the trait instance when the dependency is removed or not
+    if dependency_of != null:
+        # The trait is a dependency of another trait, so we need to save it
+        dependency_of.get_meta(META_DEPENDENCIES_PROPERTY)[weakref(trait_instance)] = true
+        trait_instance.get_meta(META_DEPENDENCY_OF_PROPERTY)[weakref(dependency_of)] = true
+        # We DO NOT update the top level trait property here, because it has already been set to true in the previous
+        # call to _instantiate_trait, the top level state remains as it was
+    else:
+        # Not a dependency in this instantiation/retrieval, so it is a top level trait even if there already exists
+        # dependencies in other instantiation/retrieval: in this case, it has explicitly been created/retrieved as a top level trait
+        trait_instance.set_meta(META_TOP_LEVEL_TRAIT_PROPERTY, true)
 
 #------------------------------------------
 # Private functions
@@ -179,7 +231,11 @@ func _get_base_type(type_name: String) -> String:
 func _get_trait_instance_meta_name(a_trait: Script) -> String:
     return META_TRAIT_INSTANCE_PREFIX + GTraitsTypeOracle.get_instance().get_trait_info(a_trait).trait_name + META_TRAIT_INSTANCE_SUFFIX
 
-func _free_trait_instance(trait_instance: Object) -> void:
+func _free_trait_instance(receiver: Object, trait_instance: Object) -> void:
+    # Free dependencies if needed
+    _remove_trait_dependencies(receiver, trait_instance)
+
+    # Free trait instance
     if GTraitsTypeOracle.get_instance().is_object_instance_of("Node", trait_instance):
         trait_instance.queue_free()
     elif GTraitsTypeOracle.get_instance().is_object_instance_of("RefCounted", trait_instance):
@@ -187,3 +243,33 @@ func _free_trait_instance(trait_instance: Object) -> void:
         pass
     else:
         trait_instance.free()
+
+func _remove_trait_dependencies(receiver: Object, trait_instance: Object) -> void:
+    # Remove this trait from the dependency of other traits
+    var dependency_of: Dictionary = trait_instance.get_meta(META_DEPENDENCY_OF_PROPERTY)
+    for dependency_of_trait in dependency_of:
+        if dependency_of_trait.get_ref() != null:
+            dependency_of_trait.get_ref().get_meta(META_DEPENDENCIES_PROPERTY).erase(weakref(trait_instance))
+
+    # Check if this trait has been marked to destroy its dependencies or not
+    var trait_instance_script: Script = trait_instance.get_meta(META_TRAIT_SCRIPT_OBJECT)
+    if not trait_instance_script.get_meta("__trait_on_destroy_destroy_dependencies", true):
+        return
+
+    # Remove this trait dependencies from the receiver
+    var dependencies: Dictionary = trait_instance.get_meta(META_DEPENDENCIES_PROPERTY)
+    for dependency in dependencies:
+        if dependency.get_ref() != null:
+            # Only auto remove non top level dependencies
+            var is_top_level: bool = dependency.get_ref().get_meta(META_TOP_LEVEL_TRAIT_PROPERTY)
+            if not is_top_level:
+                # Only remove the trait if it is not used by another trait
+                var dependency_used_by: Dictionary = dependency.get_ref().get_meta(META_DEPENDENCY_OF_PROPERTY)
+                var dependency_used_by_objects: Array = dependency_used_by.keys().duplicate()
+                for dependency_used_by_object in dependency_used_by_objects:
+                    if dependency_used_by_object.get_ref() == trait_instance:
+                        dependency_used_by.erase(dependency_used_by_object)
+                if dependency_used_by.is_empty():
+                    var dependency_script: Script = dependency.get_ref().get_meta(META_TRAIT_SCRIPT_OBJECT)
+                    remove_trait(dependency_script, receiver)
+                    print("destroying a dependency")
