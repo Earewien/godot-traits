@@ -103,7 +103,7 @@ func _initialize_trait(a_trait_instance: Node) -> void:
     # there is a check to enure that it will be done only once
     GTraitsTraitInitializerRegistry.get_instance() \
         .get_initialize_initializer(the_trait) \
-        .invoke(GTraitsTraitBuilder.new(), receiver, a_trait_instance)
+        .invoke(GTraitsTraitBuilder.new(), receiver, a_trait_instance, true)
 
     # Save trait instance into the receiver trait instances storage
     var trait_storage: GTraitsStorage = GTraitsStorage.get_instance()

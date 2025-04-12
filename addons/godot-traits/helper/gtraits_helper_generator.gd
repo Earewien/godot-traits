@@ -267,15 +267,20 @@ func _generate_gtraits_helper() -> void:
 
             for qualified_trait_name in sorted_trait_qualified_names:
                 var the_trait: GTraitsGDScriptParser.ClassInfo = traits[qualified_trait_name]
+                var the_trait_on_destroy_policy: String = the_trait.annotations['trait'].options['on_destroy'] if the_trait.annotations['trait'].options.has("on_destroy") else 'destroy_dependencies'
+                if the_trait_on_destroy_policy != 'destroy_dependencies' and the_trait_on_destroy_policy != 'keep_dependencies':
+                    _logger.warn(func(): return "⚠️ Trait '%s' has an invalid on_destroy policy: '%s'. It will be ignored." % [the_trait.qualified_class_name, the_trait_on_destroy_policy])
+                    the_trait_on_destroy_policy = 'destroy_dependencies'
+                var the_trait_on_destroy_cascade: bool = the_trait_on_destroy_policy == 'destroy_dependencies'
                 if _scene_paths_by_script_path.has_key(the_trait.script_path):
                     var scene_paths: Array = _scene_paths_by_script_path.get_values(the_trait.script_path)
                     if scene_paths.size() == 1:
-                        registry_content += indent_string + "GTraitsCore.register_trait(%s, \"%s\", \"%s\")\n" % [the_trait.qualified_class_name, the_trait.qualified_class_name, scene_paths.front()]
+                        registry_content += indent_string + "GTraitsCore.register_trait(%s, \"%s\", %s, \"%s\")\n" % [the_trait.qualified_class_name, the_trait.qualified_class_name, the_trait_on_destroy_cascade, scene_paths.front()]
                     else:
                         _logger.warn(func(): return "⚠️ Multiple scenes are using script trait '%s' as root script. It will not be declared as a Scene trait." % the_trait.qualified_class_name)
-                        registry_content += indent_string + "GTraitsCore.register_trait(%s, \"%s\")\n" % [the_trait.qualified_class_name, the_trait.qualified_class_name]
+                        registry_content += indent_string + "GTraitsCore.register_trait(%s, \"%s\", %s)\n" % [the_trait.qualified_class_name, the_trait.qualified_class_name, the_trait_on_destroy_cascade]
                 else:
-                    registry_content += indent_string + "GTraitsCore.register_trait(%s, \"%s\")\n" % [the_trait.qualified_class_name, the_trait.qualified_class_name]
+                    registry_content += indent_string + "GTraitsCore.register_trait(%s, \"%s\", %s)\n" % [the_trait.qualified_class_name, the_trait.qualified_class_name, the_trait_on_destroy_cascade]
     registry_content += "\n"
     registry_content += "#endregion\n\n"
 

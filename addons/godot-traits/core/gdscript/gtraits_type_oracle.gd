@@ -125,8 +125,9 @@ func filter_super_script_types_and_sub_script_types_of(scripts: Array[Script], s
 
 ## Declare a class as a trait, making it available for dependency injection. If the scene path is not empty,
 ## the given scene will be instantiated instead of the given script when a trait instance will be needed
-func register_trait(a_trait: Script, a_trait_name: String, scene_path: String = "") -> void:
+func register_trait(a_trait: Script, a_trait_name: String, on_destroy_destroy_dependencies: bool = true, scene_path: String = "") -> void:
     _known_traits[a_trait] = TraitInfo.new(a_trait_name, a_trait, scene_path)
+    a_trait.set_meta("__trait_on_destroy_destroy_dependencies", on_destroy_destroy_dependencies)
 
 ## Returns [code]true[/code] is the given class is a trait, [code]false[/code] otherwise.
 func is_trait(script: Script) -> bool:
