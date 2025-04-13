@@ -2,5 +2,5 @@
 
 [ext_resource type="Script" uid="uid://to81vh8whshd" path="res://addons/godot-traits/core/container/gtraits_container_3d.gd" id="1_xwahp"]
 
-[node name="GTraitsContainer3D" type="Node2D"]
+[node name="GTraitsContainer3D" type="Node3D"]
 script = ExtResource("1_xwahp")
